@@ -43,16 +43,12 @@ class QueryParams(BaseModel):
         return value
 
 
-DROP_PARAMS = ("api_key", "nested", "dehydrate", "dehydrate_nested", "q")
-
-
 class ExtraQueryParams(QueryParams):
     class Config:
         extra = "allow"
 
     def __init__(self, **data):
-        for p in DROP_PARAMS:
-            data.pop(p, None)
+        data.pop("api_key", None)
         super().__init__(**data)
 
     @classmethod
@@ -317,6 +313,11 @@ class Query:
         if params.prop and params.value:
             q = q.where(**{params.prop: params.value})
         extra = clean_dict({k: v for k, v in params if k not in params.__fields__})
+        extra = {
+            k: v
+            for k, v in extra.items()
+            if k not in ("api_key", "nested", "dehydrate", "dehydrate_nested", "q")
+        }
         if extra:
             q = q.where(**extra)
 
