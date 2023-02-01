@@ -20,13 +20,13 @@ class QueryTestCase(TestCase):
         q = Query(self.table).where(country="de")
         self.assertEqual(
             str(q),
-            "SELECT t.id, t.schema, t.entity, t.entity ->> '$.properties.country' AS country FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(country) WHERE value = ?))",
+            "SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.country') AS country FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(country) WHERE value = ?))",
         )
 
         q = Query(self.table).where(date=2019, country="de")
         self.assertEqual(
             str(q),
-            "SELECT t.id, t.schema, t.entity, t.entity ->> '$.properties.country' AS country, t.entity ->> '$.properties.date' AS date FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(country) WHERE value = ?)) AND (EXISTS (SELECT 1 FROM json_each(date) WHERE value = ?))",
+            "SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.country') AS country, json_extract(t.entity, '$.properties.date') AS date FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(country) WHERE value = ?)) AND (EXISTS (SELECT 1 FROM json_each(date) WHERE value = ?))",
         )
         self.assertSequenceEqual(["de", 2019], [v for v in q.parameters])
 
@@ -50,7 +50,7 @@ class QueryTestCase(TestCase):
         )
         self.assertEqual(
             q.select_part,
-            "t.id, t.schema, t.entity, t.entity ->> '$.scope' AS context_scope",
+            "t.id, t.schema, t.entity, json_extract(t.entity, '$.scope') AS context_scope",
         )
         self.assertEqual(q.where_part, "WHERE (context_scope = ?)")
         self.assertSequenceEqual(["foo"], [v for v in q.parameters])
@@ -71,35 +71,35 @@ class QueryTestCase(TestCase):
         q = Query(self.table).where(schema="Payment", amount__gt=0)
         self.assertEqual(
             str(q),
-            "SELECT t.id, t.schema, t.entity, t.entity ->> '$.properties.amount' AS amount FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) > ?)) AND (t.schema = ?)",
+            "SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.amount') AS amount FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) > ?)) AND (t.schema = ?)",
         )
         self.assertSequenceEqual([0, "Payment"], [v for v in q.parameters])
 
         q = Query(self.table).where(schema="Payment", amount__gte=10)
         self.assertEqual(
             str(q),
-            "SELECT t.id, t.schema, t.entity, t.entity ->> '$.properties.amount' AS amount FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) >= ?)) AND (t.schema = ?)",
+            "SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.amount') AS amount FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) >= ?)) AND (t.schema = ?)",
         )
         self.assertSequenceEqual([10, "Payment"], [v for v in q.parameters])
 
         q = Query(self.table).where(schema="Payment", amount__lt=10)
         self.assertEqual(
             str(q),
-            "SELECT t.id, t.schema, t.entity, t.entity ->> '$.properties.amount' AS amount FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) < ?)) AND (t.schema = ?)",
+            "SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.amount') AS amount FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) < ?)) AND (t.schema = ?)",
         )
         self.assertSequenceEqual([10, "Payment"], [v for v in q.parameters])
 
         q = Query(self.table).where(schema="Payment", amount__lte=10)
         self.assertEqual(
             str(q),
-            "SELECT t.id, t.schema, t.entity, t.entity ->> '$.properties.amount' AS amount FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) <= ?)) AND (t.schema = ?)",
+            "SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.amount') AS amount FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) <= ?)) AND (t.schema = ?)",
         )
         self.assertSequenceEqual([10, "Payment"], [v for v in q.parameters])
 
         q = Query(self.table).where(name__like="nestle")
         self.assertEqual(
             str(q),
-            "SELECT t.id, t.schema, t.entity, t.entity ->> '$.properties.name' AS name FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(name) WHERE value LIKE ?))",
+            "SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.name') AS name FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(name) WHERE value LIKE ?))",
         )
         # FIXME sqlite COLLATE NOCASE
         self.assertEqual(str(q), str(q.where(name__ilike="nestle")))
@@ -107,7 +107,7 @@ class QueryTestCase(TestCase):
         q = Query(self.table).where(name__in=("alice", "lisa"))
         self.assertEqual(
             str(q),
-            "SELECT t.id, t.schema, t.entity, t.entity ->> '$.properties.name' AS name FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(name) WHERE value IN (?, ?)))",
+            "SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.name') AS name FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(name) WHERE value IN (?, ?)))",
         )
         self.assertSequenceEqual(["alice", "lisa"], [v for v in q.parameters])
 
@@ -135,14 +135,14 @@ class QueryTestCase(TestCase):
         self.assertEqual(base.order_by("name").order_part, "ORDER BY name ASC")
         self.assertEqual(
             base.order_by("name").select_part,
-            "t.id, t.schema, t.entity, t.entity ->> '$.properties.name' AS name",
+            "t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.name') AS name",
         )
 
     def test_query_correct_chain(self):
         q = Query(self.table).where(name="bar").order_by("date")[:10].where(amount=1)
         self.assertEqual(
             str(q),
-            "SELECT t.id, t.schema, t.entity, t.entity ->> '$.properties.amount' AS amount, t.entity ->> '$.properties.date' AS date, t.entity ->> '$.properties.name' AS name FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) = ?)) AND (EXISTS (SELECT 1 FROM json_each(name) WHERE value = ?)) ORDER BY date ASC LIMIT 10 OFFSET 0",
+            "SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.amount') AS amount, json_extract(t.entity, '$.properties.date') AS date, json_extract(t.entity, '$.properties.name') AS name FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) = ?)) AND (EXISTS (SELECT 1 FROM json_each(name) WHERE value = ?)) ORDER BY date ASC LIMIT 10 OFFSET 0",
         )
         # order by should be overwritten!
         q = Query(self.table).order_by("a").order_by("b")
@@ -207,7 +207,7 @@ class QueryTestCase(TestCase):
         q = q.where(keywords="foo")
         self.assertEqual(
             str(q),
-            "SELECT t.id, t.schema, t.entity, t.entity ->> '$.properties.keywords' AS keywords FROM ftm_test__fts s LEFT JOIN ftm_test t ON s.id = t.id WHERE (EXISTS (SELECT 1 FROM json_each(keywords) WHERE value = ?)) AND (t.schema = ?) AND s.text MATCH ? ORDER BY s.rank",
+            "SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.keywords') AS keywords FROM ftm_test__fts s LEFT JOIN ftm_test t ON s.id = t.id WHERE (EXISTS (SELECT 1 FROM json_each(keywords) WHERE value = ?)) AND (t.schema = ?) AND s.text MATCH ? ORDER BY s.rank",
         )
 
         # ordering overwrites rank ordering
@@ -218,5 +218,5 @@ class QueryTestCase(TestCase):
         q = Query(self.table).where(amount__gt=10).order_by("amount")
         self.assertEqual(
             str(q),
-            "SELECT t.id, t.schema, t.entity, t.entity ->> '$.properties.amount' AS amount FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) > ?)) ORDER BY CAST(amount ->> '$[0]' AS NUMERIC) ASC",
+            "SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.amount') AS amount FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) > ?)) ORDER BY CAST(json_extract(amount, '$[0]') AS NUMERIC) ASC",
         )
