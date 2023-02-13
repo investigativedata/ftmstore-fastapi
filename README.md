@@ -91,6 +91,7 @@ REDIS_URL=redis://localhost:6379
 DEFAULT_LIMIT=100  # results per page
 SQLITE_IN_MEMORY=1  # 0 to disable
 PRELOAD_DATASETS=0  # lazy loading of datasets, set 1 to load all at startup
+INDEX_PROPERTIES=""  # comma-separated additional properties to add to the FTS index, e.g. : "keywords,notes"
 # for api docs rendering:
 TITLE=FollowTheMoney Store API"
 CONTACT_AUTHOR

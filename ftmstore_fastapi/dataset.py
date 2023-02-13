@@ -12,7 +12,7 @@ from nomenklatura.entity import CE
 
 from .logging import get_logger
 from .query import Query
-from .settings import IN_MEMORY, PRELOAD_DATASETS
+from .settings import IN_MEMORY, INDEX_PROPERTIES, PRELOAD_DATASETS
 from .util import get_dehydrated_proxy, get_proxy, uplevel
 
 DS = TypeVar("DS", bound="Dataset")
@@ -144,9 +144,14 @@ class Dataset(NKDataset):
         ix = 0
         for ix, proxy in enumerate(store.iterate()):
             if proxy.schema.is_a("Thing"):
-                names = set([proxy.caption, *proxy.names])
+                txt = set([proxy.caption, *proxy.names])
+                props = []
+                for prop in INDEX_PROPERTIES:
+                    if proxy.has(prop, quiet=True):
+                        props.extend(proxy.get(prop))
                 search = join_text(
-                    names,
+                    *txt,
+                    *props,
                     *proxy.countries,
                     *proxy.get_type_values(registry.identifier),
                 )
