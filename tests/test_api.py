@@ -90,6 +90,18 @@ class ApiTestCase(TestCase):
             ],
         )
 
+        res = self.client.get("/eu_authorities/entities?jurisdiction=eu&order_by=-name")
+        self.assertEqual(200, res.status_code)
+        res = res.json()
+        self.assertEqual(res["total"], 151)
+
+        res = self.client.get(
+            "/eu_authorities/entities?jurisdiction__not=eu&order_by=-name"
+        )
+        self.assertEqual(200, res.status_code)
+        res = res.json()
+        self.assertEqual(res["total"], 0)
+
     def test_api_dataset_entity_detail(self):
         res = self.client.get(
             "/ec_meetings/entities/addr-00177d9455d8e1b6a3f5530ea1e7e81ce1c8333f"

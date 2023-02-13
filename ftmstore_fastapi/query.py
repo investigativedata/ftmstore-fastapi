@@ -43,16 +43,12 @@ class QueryParams(BaseModel):
         return value
 
 
-DROP_PARAMS = ("api_key", "nested", "dehydrate", "dehydrate_nested", "q")
-
-
 class ExtraQueryParams(QueryParams):
     class Config:
         extra = "allow"
 
     def __init__(self, **data):
-        for p in DROP_PARAMS:
-            data.pop(p, None)
+        data.pop("api_key", None)
         super().__init__(**data)
 
     @classmethod
@@ -80,8 +76,8 @@ class Query:
 
     This results in:
         SELECT id, schema, entity,
-            entity ->> '$.properties.country' AS country,
-            entity ->> '$.properties.name' AS name
+            json_extract(entity, '$.properties.country') AS country,
+            json_extract(entity, '$.properties.name') AS name
         FROM ftm_collection
         WHERE EXISTS (SELECT 1 FROM json_each(name) WHERE value = ?)
         ORDER BY name DESC
@@ -172,7 +168,7 @@ class Query:
         WHERE lookups for ftm properties (name="foo") will be rewritten as
 
         SELECT ...
-        entity ->> '$.properties.name' AS name
+        json_extract(entity, '$.properties.name') AS name
         ...
         WHERE EXISTS (SELECT 1 FROM json_each(name) WHERE value = 'foo')
         """
@@ -237,8 +233,8 @@ class Query:
                 field = field.rstrip("[]")
                 if field.startswith("context."):
                     field = field[8:]
-                return f"t.entity ->> '$.{field}'", alias
-            return f"t.entity ->> '$.properties.{field}'", alias
+                return f"json_extract(t.entity, '$.{field}')", alias
+            return f"json_extract(t.entity, '$.properties.{field}')", alias
         return None, None
 
     def get_json_select_fields(self) -> Generator[str, None, None]:
@@ -317,6 +313,11 @@ class Query:
         if params.prop and params.value:
             q = q.where(**{params.prop: params.value})
         extra = clean_dict({k: v for k, v in params if k not in params.__fields__})
+        extra = {
+            k: v
+            for k, v in extra.items()
+            if k not in ("api_key", "nested", "dehydrate", "dehydrate_nested", "q")
+        }
         if extra:
             q = q.where(**extra)
 
@@ -332,7 +333,7 @@ class Query:
         if constants.PROPERTY_TYPES.get(prop) == registry.number:
             if field == "value":
                 return f"CAST({field} AS NUMERIC)"
-            return f"CAST({field} ->> '$[0]' AS NUMERIC)"
+            return f"CAST(json_extract({field}, '$[0]') AS NUMERIC)"
         return field
 
 

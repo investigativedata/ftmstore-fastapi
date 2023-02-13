@@ -144,8 +144,9 @@ class Dataset(NKDataset):
         ix = 0
         for ix, proxy in enumerate(store.iterate()):
             if proxy.schema.is_a("Thing"):
+                names = set([proxy.caption, *proxy.names])
                 search = join_text(
-                    *proxy.names,
+                    names,
                     *proxy.countries,
                     *proxy.get_type_values(registry.identifier),
                 )
