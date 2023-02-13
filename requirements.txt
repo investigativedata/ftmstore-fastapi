@@ -1,5 +1,5 @@
 cachelib==0.10.2
-fastapi==0.91.0
+fastapi[all]==0.91.0
 followthemoney==3.3.0
 followthemoney-store==3.0.3
 furl==2.1.3
