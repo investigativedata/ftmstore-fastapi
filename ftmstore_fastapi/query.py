@@ -6,7 +6,7 @@ from banal import as_bool, clean_dict, ensure_dict, ensure_list, is_listish
 from fastapi import HTTPException, Request
 from followthemoney.model import registry
 from followthemoney.util import join_text
-from normality import collapse_spaces, slugify
+from normality import collapse_spaces, normalize, slugify
 from pydantic import BaseModel, Field, validator
 
 from . import constants, settings
@@ -367,7 +367,7 @@ class SearchQuery(Query):
     def parameters(self):
         yield from super().parameters
         if self.term:
-            yield self.term
+            yield self.clean_term(self.term)
 
     def to_str(self) -> str:
         if not self.term:
@@ -386,6 +386,11 @@ class SearchQuery(Query):
         {self.limit_part or ''}
         """
         return collapse_spaces(q)
+
+    @staticmethod
+    def clean_term(value: str) -> str:
+        # FIXME sqlite FTS Match errors on special characters like . - '
+        return normalize(value, lowercase=False)
 
 
 class AggregationQuery(Query):
