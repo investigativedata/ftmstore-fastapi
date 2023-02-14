@@ -9,6 +9,7 @@ from . import settings, views
 from .logging import get_logger
 from .query import QueryParams
 from .serialize import (
+    AggregationResponse,
     DataCatalogResponse,
     DatasetResponse,
     EntitiesResponse,
@@ -161,3 +162,26 @@ async def search(
     the search result can be used here as well.
     """
     return views.search(request, dataset, retrieve_params, q)
+
+
+@app.get("/{dataset}/aggregate")
+async def aggregation(
+    request: Request,
+    dataset: str,
+    q: str = Query(None, title="Search string"),
+    params: QueryParams = Depends(QueryParams),
+    aggregation_params: views.AggreagtionParams = Depends(views.get_aggregation_params),
+) -> AggregationResponse:
+    """
+    Aggregate property values for given filter criteria (same as entities
+    endpoint + search term)
+
+    specify which props / context data should be aggregated like this:
+
+        ?aggSum=amount&aggMin=amount
+
+    multiple fields possible:
+
+        ?aggMax=amount&aggMax=date
+    """
+    return views.aggregation(request, dataset, q, aggregation_params)

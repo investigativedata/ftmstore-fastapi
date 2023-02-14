@@ -11,7 +11,7 @@ from nomenklatura.dataset import Dataset as NKDataset
 from nomenklatura.entity import CE
 
 from .logging import get_logger
-from .query import Query
+from .query import AggregationQuery, Query
 from .settings import IN_MEMORY, INDEX_PROPERTIES, PRELOAD_DATASETS
 from .util import get_dehydrated_proxy, get_proxy, uplevel
 
@@ -64,14 +64,21 @@ class Dataset(NKDataset):
             else:
                 proxy = get_proxy(data)
             if nested:
-                proxy = self.nested(proxy, dehydrate_nested)
+                proxy = self.nest(proxy, dehydrate_nested)
             yield proxy
+
+    def get_aggregations(
+        self, query: AggregationQuery
+    ) -> Generator[tuple[str, str, str], None, None]:
+        for field, func, agg_query in query.get_agg_queries():
+            for res in self.connection.execute(agg_query, tuple(query.parameters)):
+                yield field, func, res[0]
 
     def get_count(self, query: Query) -> int:
         for i, *rest in self.connection.execute(query.count, tuple(query.parameters)):
             return i
 
-    def nested(self, proxy: CE, dehydrate: bool = False) -> CE:
+    def nest(self, proxy: CE, dehydrate: bool = False) -> CE:
         q = Query(self.name).where(id__in=proxy.get_type_values(registry.entity))
         proxy.context["adjacents"] = {
             p.id: p for p in self.get_entities(q, dehydrate=dehydrate)

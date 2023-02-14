@@ -1,3 +1,4 @@
+from collections import defaultdict
 from functools import cached_property
 from typing import Any, Generator, Iterable, Literal
 
@@ -43,12 +44,27 @@ class QueryParams(BaseModel):
         return value
 
 
+class AggreagtionParams(BaseModel):
+    aggSum: list[str] | None = []
+    aggMin: list[str] | None = []
+    aggMax: list[str] | None = []
+    aggAvg: list[str] | None = []
+
+    def inverse(self) -> dict[str, set[str]]:
+        aggregations = defaultdict(set)
+        for agg_key, fields in self:
+            for field in fields:
+                aggregations[field].add(agg_key[3:].lower())
+        return aggregations
+
+
 class ExtraQueryParams(QueryParams):
     class Config:
         extra = "allow"
 
     def __init__(self, **data):
         data.pop("api_key", None)
+        data = {k: v for k, v in data.items() if k not in AggreagtionParams.__fields__}
         super().__init__(**data)
 
     @classmethod
@@ -95,6 +111,7 @@ class Query:
         "null": "IS",
         "not": "<>",
     }
+    SELECT_FIELDS = ["t.id", "t.schema", "t.entity"]
 
     def __init__(
         self,
@@ -249,9 +266,9 @@ class Query:
 
     @property
     def select_part(self) -> str:
-        fields = ["t.id", "t.schema", "t.entity"]
-        fields.extend(sorted(set(self.get_json_select_fields())))
-        return join_text(*fields, sep=", ")
+        return join_text(
+            *self.SELECT_FIELDS, *sorted(set(self.get_json_select_fields())), sep=", "
+        )
 
     @property
     def where_part(self) -> str:
@@ -369,3 +386,34 @@ class SearchQuery(Query):
         {self.limit_part or ''}
         """
         return collapse_spaces(q)
+
+
+class AggregationQuery(Query):
+    def __init__(self, *args, aggregations: AggreagtionParams | None = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.aggregations = aggregations
+
+    @classmethod
+    def from_params(
+        cls, table: str, params: ExtraQueryParams, aggregations=AggreagtionParams
+    ) -> "AggregationQuery":
+        q = super(AggregationQuery, cls).from_params(table, params)
+        q.aggregations = aggregations
+        return q
+
+    def get_agg_queries(self) -> Generator[tuple[str, str, str], None, None]:
+        if self.aggregations is None:
+            return
+
+        self.limit = None
+        self.offset = None
+        self.order_by = None
+        # FIXME this is not performance efficient as we could group multiple
+        # aggregations for one field together into 1 query
+        inner = super().to_str()
+        aggregations = self.aggregations.inverse()
+        for field, funcs in aggregations.items():
+            json_lookup, _ = self.get_json_lookup_field(field)
+            for func in funcs:
+                select_part = f"{func.upper()}(value) AS agg{func.title()}"
+                yield field, func, f"SELECT {select_part} FROM ({inner}) t, json_each({json_lookup})"

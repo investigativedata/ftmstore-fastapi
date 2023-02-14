@@ -49,7 +49,7 @@ sqlite database that is loaded on boot time feeded from the source database via
 `FTM_STORE_URI`. For production use, a simple cache based on redis is
 available.
 
-There are three main api endpoints:
+There are four main api endpoints:
 
 * Retrieve a single entity based on its id and dataset, optionally with inlined
   adjacent entities: `/{dataset}/entities/{entity_id}`
@@ -57,6 +57,8 @@ There are three main api endpoints:
   pagination: `/{dataset}/entities?{params}`
 * Search for entities (by their name property types) via
   [Sqlite FTS](https://www.sqlite.org/fts5.html): `/{dataset}/search?q=<search term>`
+* Aggregate (on SQL level) `sum`, `avg`, `max`, `min` for ftm properties and
+  arbitrary extra data (see below)
 
 Two more endpoints for catalog / dataset metadata:
 

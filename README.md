@@ -68,6 +68,39 @@ uncasted, aka all properties are multi values as string)
 
 For arbitrary context data: `?order_by=context.foo`
 
+#### aggregation
+
+Aggregations `sum`, `min`, `max`, `avg` are performed via sqlite, and work for
+both properties and arbitrary extra data. The endpoint accepts all other
+parameters from the entities endpoint as well (+ search term via `q`).
+
+`/{dataset}/aggregate?schema=Payment&aggSum=amount&aggAvg=amount&aggMin=date&aggMax=date`
+
+```json
+{
+  "total": 143598,
+  "query": {
+    "limit": 100,
+    "page": 1,
+    "schema": "Payment",
+    "order_by": null,
+    "prop": null,
+    "value": null
+  },
+  "url": "...",
+  "aggregations": {
+    "amount": {
+      "avg": 8909.264242607847,
+      "sum": 1279352526.7100017
+    },
+    "date": {
+      "min": "2007",
+      "max": "2021"
+    }
+  }
+}
+```
+
 
 ## quickstart
 
