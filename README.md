@@ -68,6 +68,39 @@ uncasted, aka all properties are multi values as string)
 
 For arbitrary context data: `?order_by=context.foo`
 
+#### aggregation
+
+Aggregations `sum`, `min`, `max`, `avg` are performed via sqlite, and work for
+both properties and arbitrary extra data. The endpoint accepts all other
+parameters from the entities endpoint as well (+ search term via `q`).
+
+`/{dataset}/aggregate?schema=Payment&aggSum=amount&aggAvg=amount&aggMin=date&aggMax=date`
+
+```json
+{
+  "total": 143598,
+  "query": {
+    "limit": 100,
+    "page": 1,
+    "schema": "Payment",
+    "order_by": null,
+    "prop": null,
+    "value": null
+  },
+  "url": "...",
+  "aggregations": {
+    "amount": {
+      "avg": 8909.264242607847,
+      "sum": 1279352526.7100017
+    },
+    "date": {
+      "min": "2007",
+      "max": "2021"
+    }
+  }
+}
+```
+
 
 ## quickstart
 
@@ -84,13 +117,14 @@ FTM_STORE_URI=followthemoney.store
 CATALOG=None  # optional specify catalog metadata file
 EXPOSE_DATASETS="*"   # restrict exposed datasets to comma separated list
 BUILD_API_KEY=secret-key-for-build  # an api key for static site builders to increase limits
-ALLOWED_ORIGIN=http://localhost:3000  # cors
+ALLOWED_ORIGIN=http://localhost:3000  # cors, comma-separated origins
 CACHE=0  # set 1 to use redis
 CACHE_TIMEOUT=0  # infinite
 REDIS_URL=redis://localhost:6379
 DEFAULT_LIMIT=100  # results per page
 SQLITE_IN_MEMORY=1  # 0 to disable
 PRELOAD_DATASETS=0  # lazy loading of datasets, set 1 to load all at startup
+INDEX_PROPERTIES=""  # comma-separated additional properties to add to the FTS index, e.g. : "keywords,notes"
 # for api docs rendering:
 TITLE=FollowTheMoney Store API"
 CONTACT_AUTHOR

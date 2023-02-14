@@ -17,7 +17,7 @@ DEBUG = as_bool(os.environ.get("DEBUG", 0))
 LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
 BUILD_API_KEY = os.environ.get("BUILD_API_KEY", "secret-key-for-build")
 
-ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "http://localhost:3000")
+ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "http://localhost:3000").split(",")
 CACHE = as_bool(os.environ.get("CACHE", 0))
 CACHE_TIMEOUT = int(os.environ.get("CACHE_TIMEOUT", 0))
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
@@ -25,6 +25,7 @@ DEFAULT_LIMIT = 100
 LOG_JSON = as_bool(os.environ.get("LOG_JSON", 0))
 IN_MEMORY = as_bool(os.environ.get("SQLITE_IN_MEMORY", 1))
 PRELOAD_DATASETS = as_bool(os.environ.get("PRELOAD_DATASETS", 0))
+INDEX_PROPERTIES = os.environ.get("INDEX_PROPERTIES", "").split(",")
 
 # Api documentation render
 TITLE = os.environ.get("TITLE", "FollowTheMoney Store API")
@@ -48,7 +49,7 @@ sqlite database that is loaded on boot time feeded from the source database via
 `FTM_STORE_URI`. For production use, a simple cache based on redis is
 available.
 
-There are three main api endpoints:
+There are four main api endpoints:
 
 * Retrieve a single entity based on its id and dataset, optionally with inlined
   adjacent entities: `/{dataset}/entities/{entity_id}`
@@ -56,6 +57,8 @@ There are three main api endpoints:
   pagination: `/{dataset}/entities?{params}`
 * Search for entities (by their name property types) via
   [Sqlite FTS](https://www.sqlite.org/fts5.html): `/{dataset}/search?q=<search term>`
+* Aggregate (on SQL level) `sum`, `avg`, `max`, `min` for ftm properties and
+  arbitrary extra data (see below)
 
 Two more endpoints for catalog / dataset metadata:
 

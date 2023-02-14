@@ -1,6 +1,12 @@
 from unittest import TestCase
 
-from ftmstore_fastapi.query import InvalidQuery, Query, SearchQuery
+from ftmstore_fastapi.query import (
+    AggreagtionParams,
+    AggregationQuery,
+    InvalidQuery,
+    Query,
+    SearchQuery,
+)
 
 
 class QueryTestCase(TestCase):
@@ -220,3 +226,22 @@ class QueryTestCase(TestCase):
             str(q),
             "SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.amount') AS amount FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) > ?)) ORDER BY CAST(json_extract(amount, '$[0]') AS NUMERIC) ASC",
         )
+
+    def test_query_aggregations(self):
+        agg = AggreagtionParams(aggSum=["amount"])
+        q = (
+            AggregationQuery(self.table, aggregations=agg)
+            .where(amount__gt=10)
+            .order_by("amount")
+        )
+        self.assertEqual(
+            str(q),
+            "SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.amount') AS amount FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) > ?)) ORDER BY CAST(json_extract(amount, '$[0]') AS NUMERIC) ASC",
+        )
+        for field, func, q in q.get_agg_queries():
+            self.assertEqual(field, "amount")
+            self.assertEqual(func, "sum")
+            self.assertEqual(
+                q,
+                "SELECT SUM(value) AS aggSum FROM (SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.amount') AS amount FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) > ?)) ORDER BY CAST(json_extract(amount, '$[0]') AS NUMERIC) ASC) t, json_each(json_extract(t.entity, '$.properties.amount'))",
+            )

@@ -3,7 +3,8 @@ serialization data models as seen in
 https://github.com/opensanctions/yente/
 """
 
-from typing import Any, Union
+from collections import defaultdict
+from typing import Any, Generator, Union
 
 from banal import clean_dict, ensure_dict
 from fastapi import Request
@@ -16,6 +17,7 @@ from .dataset import DataCatalog, Dataset, Entities
 from .query import ExtraQueryParams
 
 EntityProperties = dict[str, list[Union[str, "EntityResponse"]]]
+Aggregations = dict[str, dict[str, Any]]
 
 
 class ErrorResponse(BaseModel):
@@ -105,6 +107,33 @@ class EntitiesResponse(BaseModel):
             url.args["page"] = query.page + 1
             response.next_url = str(url)
         return response
+
+
+class AggregationResponse(BaseModel):
+    total: int
+    query: ExtraQueryParams
+    url: str
+    aggregations: Aggregations
+
+    @classmethod
+    def from_view(
+        cls,
+        request: Request,
+        aggregations: Generator[tuple[str, str, str], None, None],
+        total: int,
+        authenticated: bool | None = False,
+    ) -> "AggregationResponse":
+        aggregations_data = defaultdict(dict)
+        for field, func, value in aggregations:
+            aggregations_data[field][func] = value
+        query = ExtraQueryParams.from_request(request, authenticated)
+        url = furl(request.url)
+        query_data = clean_dict(query.dict())
+        query_data.pop("schema_", None)
+        url.args.update(query_data)
+        return cls(
+            total=total, query=query, url=str(url), aggregations=aggregations_data
+        )
 
 
 class DatasetResponse(BaseModel):

@@ -156,3 +156,25 @@ class ApiTestCase(TestCase):
         #         ],
         #     },
         # )
+
+    def test_api_aggregation(self):
+        res = self.client.get(
+            "/ec_meetings/aggregate?schema=Event&aggMin=date&aggMax=date"
+        )
+        res = res.json()
+        self.assertDictEqual(
+            res,
+            {
+                "total": 34975,
+                "query": {
+                    "limit": 100,
+                    "page": 1,
+                    "schema": "Event",
+                    "order_by": None,
+                    "prop": None,
+                    "value": None,
+                },
+                "url": "http://testserver/ec_meetings/aggregate?schema=Event&aggMin=date&aggMax=date&limit=100&page=1",
+                "aggregations": {"date": {"min": "2014-11-12", "max": "2023-01-20"}},
+            },
+        )

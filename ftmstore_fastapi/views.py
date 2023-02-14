@@ -5,8 +5,15 @@ from fastapi import Request
 from pydantic import BaseModel
 
 from .cache import cache_view
-from .query import ExtraQueryParams, Query, SearchQuery
+from .query import (
+    AggreagtionParams,
+    AggregationQuery,
+    ExtraQueryParams,
+    Query,
+    SearchQuery,
+)
 from .serialize import (
+    AggregationResponse,
     DataCatalogResponse,
     DatasetResponse,
     EntitiesResponse,
@@ -33,6 +40,15 @@ def get_retrieve_params(
     return RetrieveParams(
         nested=nested, dehydrate=dehydrate, dehydrate_nested=dehydrate_nested
     )
+
+
+def get_aggregation_params(
+    aggSum: list[str] = QueryField([], description="Fields to aggregate for SUM"),
+    aggMax: list[str] = QueryField([], description="Fields to aggregate for MAX"),
+    aggMin: list[str] = QueryField([], description="Fields to aggregate for MIN"),
+    aggAvg: list[str] = QueryField([], description="Fields to aggregate for AVG"),
+) -> AggreagtionParams:
+    return AggreagtionParams(aggSum=aggSum, aggMin=aggMin, aggMax=aggMax, aggAvg=aggAvg)
 
 
 @cache
@@ -89,5 +105,24 @@ def search(
     return EntitiesResponse.from_view(
         request=request,
         entities=dataset.get_entities(query, **retrieve_params.dict()),
+        total=dataset.get_count(query),
+    )
+
+
+@cache_view
+def aggregation(
+    request: Request,
+    dataset: str,
+    q: str | None = None,
+    aggregation_params: AggreagtionParams | None = None,
+) -> AggregationResponse:
+    dataset = get_dataset(dataset)
+    params = ExtraQueryParams.from_request(request)
+    query = AggregationQuery.from_params(dataset.name, params, aggregation_params)
+    if q:
+        query.term = q
+    return AggregationResponse.from_view(
+        request=request,
+        aggregations=dataset.get_aggregations(query),
         total=dataset.get_count(query),
     )
