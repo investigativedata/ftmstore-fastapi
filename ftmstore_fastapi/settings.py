@@ -17,7 +17,7 @@ DEBUG = as_bool(os.environ.get("DEBUG", 0))
 LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
 BUILD_API_KEY = os.environ.get("BUILD_API_KEY", "secret-key-for-build")
 
-ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "http://localhost:3000")
+ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "http://localhost:3000").split(",")
 CACHE = as_bool(os.environ.get("CACHE", 0))
 CACHE_TIMEOUT = int(os.environ.get("CACHE_TIMEOUT", 0))
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
