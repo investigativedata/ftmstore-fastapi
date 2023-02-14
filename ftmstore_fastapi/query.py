@@ -393,7 +393,7 @@ class SearchQuery(Query):
         return normalize(value, lowercase=False)
 
 
-class AggregationQuery(Query):
+class AggregationQuery(SearchQuery):
     def __init__(self, *args, aggregations: AggreagtionParams | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.aggregations = aggregations
