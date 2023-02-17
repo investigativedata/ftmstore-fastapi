@@ -44,7 +44,7 @@ class QueryParams(BaseModel):
         return value
 
 
-class AggreagtionParams(BaseModel):
+class AggregationParams(BaseModel):
     aggSum: list[str] | None = []
     aggMin: list[str] | None = []
     aggMax: list[str] | None = []
@@ -64,7 +64,7 @@ class ExtraQueryParams(QueryParams):
 
     def __init__(self, **data):
         data.pop("api_key", None)
-        data = {k: v for k, v in data.items() if k not in AggreagtionParams.__fields__}
+        data = {k: v for k, v in data.items() if k not in AggregationParams.__fields__}
         super().__init__(**data)
 
     @classmethod
@@ -394,13 +394,13 @@ class SearchQuery(Query):
 
 
 class AggregationQuery(SearchQuery):
-    def __init__(self, *args, aggregations: AggreagtionParams | None = None, **kwargs):
+    def __init__(self, *args, aggregations: AggregationParams | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.aggregations = aggregations
 
     @classmethod
     def from_params(
-        cls, table: str, params: ExtraQueryParams, aggregations=AggreagtionParams
+        cls, table: str, params: ExtraQueryParams, aggregations=AggregationParams
     ) -> "AggregationQuery":
         q = super(AggregationQuery, cls).from_params(table, params)
         q.aggregations = aggregations

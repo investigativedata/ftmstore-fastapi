@@ -2,11 +2,13 @@ from functools import cache
 
 from fastapi import Query as QueryField
 from fastapi import Request
+from fastapi.responses import RedirectResponse
+from furl import furl
 from pydantic import BaseModel
 
 from .cache import cache_view
 from .query import (
-    AggreagtionParams,
+    AggregationParams,
     AggregationQuery,
     ExtraQueryParams,
     Query,
@@ -47,8 +49,8 @@ def get_aggregation_params(
     aggMax: list[str] = QueryField([], description="Fields to aggregate for MAX"),
     aggMin: list[str] = QueryField([], description="Fields to aggregate for MIN"),
     aggAvg: list[str] = QueryField([], description="Fields to aggregate for AVG"),
-) -> AggreagtionParams:
-    return AggreagtionParams(aggSum=aggSum, aggMin=aggMin, aggMax=aggMax, aggAvg=aggAvg)
+) -> AggregationParams:
+    return AggregationParams(aggSum=aggSum, aggMin=aggMin, aggMax=aggMax, aggAvg=aggAvg)
 
 
 @cache
@@ -84,9 +86,16 @@ def entity_list(
 @cache_view
 def entity_detail(
     request: Request, dataset: str, entity_id: str, retrieve_params: RetrieveParams
-) -> EntityResponse:
+) -> EntityResponse | RedirectResponse:
     dataset = get_dataset(dataset)
     entity = dataset.get(entity_id, **retrieve_params.dict())
+    if entity.id != entity_id:  # we have a redirect to a merged entity
+        url = furl(request.url)
+        url.path.segments[-1] = entity.id
+        response = RedirectResponse(url)
+        response.headers["X-Entity-ID"] = entity.id
+        response.headers["X-Entity-Schema"] = entity.schema.name
+        return response
     return EntityResponse.from_entity(entity)
 
 
@@ -114,7 +123,7 @@ def aggregation(
     request: Request,
     dataset: str,
     q: str | None = None,
-    aggregation_params: AggreagtionParams | None = None,
+    aggregation_params: AggregationParams | None = None,
 ) -> AggregationResponse:
     dataset = get_dataset(dataset)
     params = ExtraQueryParams.from_request(request)

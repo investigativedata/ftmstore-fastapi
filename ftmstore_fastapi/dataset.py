@@ -45,6 +45,10 @@ class Dataset(NKDataset):
             q, nested=nested, dehydrate=dehydrate, dehydrate_nested=dehydrate_nested
         ):
             return proxy
+        # look up merged entities
+        q = Query(self.name).where(**{"context.referents[]": entity_id})
+        for proxy in self.get_entities(q):
+            return proxy
         raise HTTPException(404, detail=f"Entity with ID `{entity_id}` not found")
 
     def get_entities(

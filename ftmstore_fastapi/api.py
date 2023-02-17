@@ -3,6 +3,7 @@ from typing import Literal
 
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from ftmstore.settings import DATABASE_URI
 
 from . import settings, views
@@ -14,6 +15,7 @@ from .serialize import (
     DatasetResponse,
     EntitiesResponse,
     EntityResponse,
+    ErrorResponse,
 )
 from .store import get_catalog
 
@@ -35,7 +37,13 @@ app.add_middleware(
 log.info("Ftm store: %s" % DATABASE_URI)
 
 
-@app.get("/catalog")
+@app.get(
+    "/catalog",
+    response_model=DataCatalogResponse,
+    responses={
+        500: {"model": ErrorResponse, "description": "Server error"},
+    },
+)
 async def dataset_list() -> DataCatalogResponse:
     """
     Show metadata for catalog (as described in
@@ -51,7 +59,13 @@ catalog = get_catalog()
 Datasets = Literal[tuple(catalog.names)]
 
 
-@app.get("/{dataset}")
+@app.get(
+    "/{dataset}",
+    response_model=DatasetResponse,
+    responses={
+        500: {"model": ErrorResponse, "description": "Server error"},
+    },
+)
 async def dataset_detail(dataset: Datasets) -> DatasetResponse:
     """
     Show metadata for given dataset (as described in
@@ -71,7 +85,13 @@ def get_authenticated(
     return secrets.compare_digest(api_key, settings.BUILD_API_KEY)
 
 
-@app.get("/{dataset}/entities")
+@app.get(
+    "/{dataset}/entities",
+    response_model=EntitiesResponse,
+    responses={
+        500: {"model": ErrorResponse, "description": "Server error"},
+    },
+)
 async def list_entities(
     request: Request,
     dataset: Datasets,
@@ -132,22 +152,43 @@ async def list_entities(
     )
 
 
-@app.get("/{dataset}/entities/{entity_id}")
+@app.get(
+    "/{dataset}/entities/{entity_id}",
+    response_model=EntityResponse,
+    responses={
+        307: {"description": "The entity was merged into another ID"},
+        404: {"model": ErrorResponse, "description": "Entity not found"},
+        500: {"model": ErrorResponse, "description": "Server error"},
+    },
+)
 async def detail_entity(
     request: Request,
     dataset: str,
     entity_id: str,
     retrieve_params: views.RetrieveParams = Depends(views.get_retrieve_params),
-) -> EntityResponse:
+) -> EntityResponse | RedirectResponse | ErrorResponse:
     """
     Retrieve a single entity within the given dataset.
 
     Optionally inline (nest) adjacent entities.
+
+    If the requested entity was merged into another entity, a redirect to the
+    new api endpoint is returned with additional headers to allow client side
+    logic:
+
+        `x-entity-id` - the new entity id
+        `x-entity-schema` - the new entity schema
     """
     return views.entity_detail(request, dataset, entity_id, retrieve_params)
 
 
-@app.get("/{dataset}/search")
+@app.get(
+    "/{dataset}/search",
+    response_model=EntitiesResponse,
+    responses={
+        500: {"model": ErrorResponse, "description": "Server error"},
+    },
+)
 async def search(
     request: Request,
     dataset: str,
@@ -164,13 +205,19 @@ async def search(
     return views.search(request, dataset, retrieve_params, q)
 
 
-@app.get("/{dataset}/aggregate")
+@app.get(
+    "/{dataset}/aggregate",
+    response_model=AggregationResponse,
+    responses={
+        500: {"model": ErrorResponse, "description": "Server error"},
+    },
+)
 async def aggregation(
     request: Request,
     dataset: str,
     q: str = Query(None, title="Search string"),
     params: QueryParams = Depends(QueryParams),
-    aggregation_params: views.AggreagtionParams = Depends(views.get_aggregation_params),
+    aggregation_params: views.AggregationParams = Depends(views.get_aggregation_params),
 ) -> AggregationResponse:
     """
     Aggregate property values for given filter criteria (same as entities
