@@ -207,7 +207,7 @@ async def search(
 
 @app.get(
     "/{dataset}/aggregate",
-    response_model=EntitiesResponse,
+    response_model=AggregationResponse,
     responses={
         500: {"model": ErrorResponse, "description": "Server error"},
     },
@@ -217,7 +217,7 @@ async def aggregation(
     dataset: str,
     q: str = Query(None, title="Search string"),
     params: QueryParams = Depends(QueryParams),
-    aggregation_params: views.AggreagtionParams = Depends(views.get_aggregation_params),
+    aggregation_params: views.AggregationParams = Depends(views.get_aggregation_params),
 ) -> AggregationResponse:
     """
     Aggregate property values for given filter criteria (same as entities

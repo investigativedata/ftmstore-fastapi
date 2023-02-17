@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from .cache import cache_view
 from .query import (
-    AggreagtionParams,
+    AggregationParams,
     AggregationQuery,
     ExtraQueryParams,
     Query,
@@ -49,8 +49,8 @@ def get_aggregation_params(
     aggMax: list[str] = QueryField([], description="Fields to aggregate for MAX"),
     aggMin: list[str] = QueryField([], description="Fields to aggregate for MIN"),
     aggAvg: list[str] = QueryField([], description="Fields to aggregate for AVG"),
-) -> AggreagtionParams:
-    return AggreagtionParams(aggSum=aggSum, aggMin=aggMin, aggMax=aggMax, aggAvg=aggAvg)
+) -> AggregationParams:
+    return AggregationParams(aggSum=aggSum, aggMin=aggMin, aggMax=aggMax, aggAvg=aggAvg)
 
 
 @cache
@@ -123,7 +123,7 @@ def aggregation(
     request: Request,
     dataset: str,
     q: str | None = None,
-    aggregation_params: AggreagtionParams | None = None,
+    aggregation_params: AggregationParams | None = None,
 ) -> AggregationResponse:
     dataset = get_dataset(dataset)
     params = ExtraQueryParams.from_request(request)
