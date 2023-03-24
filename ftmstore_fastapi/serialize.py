@@ -41,6 +41,9 @@ class EntityResponse(BaseModel):
         description="Some arbitrary extra data for this entity",
     )
 
+    class Config:
+        allow_population_by_field_name = True
+
     @classmethod
     def from_entity(cls, entity: CE) -> "EntityResponse":
         properties = dict(entity.properties)
