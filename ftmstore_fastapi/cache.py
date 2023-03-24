@@ -2,10 +2,10 @@ from collections import Counter
 from functools import cache
 from typing import Any
 
-from cachelib import redis
+import redis
+from cachelib.serializers import RedisSerializer
 from fastapi import Request
 from followthemoney.util import make_entity_id
-from furl import furl
 
 from . import settings
 from .logging import get_logger
@@ -18,14 +18,9 @@ PREFIX = f"ftmstore_fastapi-{settings.VERSION}"
 class Cache:
     def __init__(self):
         if settings.CACHE:
-            uri = furl(settings.REDIS_URL)
-            uri.port = uri.port or 6379
-            self.cache = redis.RedisCache(
-                uri.host,
-                uri.port,
-                default_timeout=settings.CACHE_TIMEOUT,
-                key_prefix=PREFIX,
-            )
+            con = redis.from_url(settings.REDIS_URL)
+            con.ping()
+            self.cache = con
         else:
             self.cache = None
 
@@ -68,6 +63,9 @@ def get_cache() -> Cache:
     return Cache()
 
 
+serializer = RedisSerializer()
+
+
 # decorator
 def cache_view(func):
     cache = get_cache()
@@ -76,9 +74,10 @@ def cache_view(func):
         key = Cache.make_key_from_request(request)
         res = cache.get(key)
         if res is not None:
-            return res
+            return serializer.loads(res)
         res = func(request, *args, **kwargs)
-        cache.set(key, res)
+        res = res.dict()
+        cache.set(key, serializer.dumps(res))
         return res
 
     return view

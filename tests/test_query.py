@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from ftmstore_fastapi.query import (
-    AggreagtionParams,
+    AggregationParams,
     AggregationQuery,
     InvalidQuery,
     Query,
@@ -228,7 +228,7 @@ class QueryTestCase(TestCase):
         )
 
     def test_query_aggregations(self):
-        agg = AggreagtionParams(aggSum=["amount"])
+        agg = AggregationParams(aggSum=["amount"])
         q = (
             AggregationQuery(self.table, aggregations=agg)
             .where(amount__gt=10)
