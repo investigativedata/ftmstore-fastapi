@@ -76,7 +76,6 @@ def cache_view(func):
         if res is not None:
             return serializer.loads(res)
         res = func(request, *args, **kwargs)
-        res = res.dict()
         cache.set(key, serializer.dumps(res))
         return res
 
