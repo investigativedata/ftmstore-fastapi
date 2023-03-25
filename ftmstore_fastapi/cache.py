@@ -12,7 +12,7 @@ from .logging import get_logger
 
 log = get_logger(__name__)
 
-PREFIX = f"ftmstore_fastapi-{settings.VERSION}"
+PREFIX = f"ftmstore_fastapi:{settings.VERSION}"
 
 
 class Cache:
