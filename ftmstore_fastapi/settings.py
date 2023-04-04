@@ -34,7 +34,7 @@ CONTACT = {
     "url": os.environ.get(
         "CONTACT_URL", "https://github.com/simonwoerpel/ftmstore-fastapi/"
     ),
-    "email": os.environ.get("CONTACT_EMAIL", "simon.woerpel@medienrevolte.de"),
+    "email": os.environ.get("CONTACT_EMAIL", "simon@investigativedata.org"),
 }
 DESCRIPTION = """
 This api exposes a
