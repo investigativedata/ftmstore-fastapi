@@ -7,4 +7,4 @@ nomenklatura==2.9.5
 PyICU==2.11
 redis==4.5.4
 SQLAlchemy<2
-structlog==22.3.0
+structlog==23.1.0
