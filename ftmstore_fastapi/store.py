@@ -1,5 +1,6 @@
 from functools import cache
 
+import orjson
 from fastapi import HTTPException
 from ftmstore import Store as FtmStore
 from ftmstore import settings
@@ -35,7 +36,9 @@ def get_store(
 @cache
 def get_catalog() -> DataCatalog:
     if CATALOG is not None:
-        return DataCatalog.from_path(CATALOG)
+        with open(CATALOG) as f:
+            data = orjson.loads(f.read())
+        return DataCatalog(Dataset, data)
     store = get_store()
     return store.get_catalog()
 

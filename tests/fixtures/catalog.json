@@ -1,0 +1,49 @@
+{
+  "datasets": [
+    {
+      "name": "ec_meetings",
+      "title": "European Commission - Meetings with interest representatives",
+      "summary": "The Commission applies strict rules on transparency concerning its contacts\nand relations with interest representatives: it requires all its Members, their\nclosest advisors (members of Cabinet) and all Directors-General to meet only\ninterest representatives that are registered in the Transparency Register and\nto publish information on such meetings. Those measures fall within the\nmeaning and scope of the conditionality and complementary transparency\nmeasures provided for in the Interinstitutional Agreement establishing the\nmandatory Transparency Register.",
+      "version": "20230504010546",
+      "updated_at": "2023-05-04T01:05:46",
+      "resources": [
+        {
+          "name": "entities.ftm.json",
+          "url": "https://data.ftm.store/ec_meetings/entities.ftm.json",
+          "mime_type": "application/json+ftm",
+          "mime_type_label": "FollowTheMoney Entities"
+        }
+      ],
+      "children": [],
+      "publisher": {
+        "name": "European Commission Secretariat-General",
+        "url": "https://commission.europa.eu/about-european-commission/departments-and-executive-agencies/secretariat-general_en",
+        "description": "The Secretariat-General is responsible for the overall coherence of the\nCommission’s work – both in shaping new policies, and in steering them\nthrough the other EU institutions. It supports the whole Commission.",
+        "official": false
+      }
+    },
+    {
+      "name": "eu_authorities",
+      "title": "EU authorities as collected by AsktheEU.org",
+      "summary": "A spreadsheet file listing every body in AsktheEU.org is available",
+      "version": "20230501013912",
+      "updated_at": "2023-05-01T01:39:12",
+      "resources": [
+        {
+          "name": "entities.ftm.json",
+          "url": "https://data.ftm.store/eu_authorities/entities.ftm.json",
+          "mime_type": "application/json+ftm",
+          "mime_type_label": "FollowTheMoney Entities"
+        }
+      ],
+      "children": [],
+      "publisher": {
+        "name": "AsktheEU",
+        "url": "https://www.asktheeu.org/",
+        "description": "The AsktheEU.org website enables you get the information you want about the\nEuropean Union. It is as easy as asking a question. The website is run by\ntwo not-for-profit, non-governmental organisations, Access Info Europe and\nmySociety. It is not an official EU website.",
+        "official": false
+      }
+    }
+  ],
+  "updated_at": "2023-05-04T12:46:30"
+}

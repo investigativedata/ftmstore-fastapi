@@ -8,7 +8,7 @@ install:
 
 
 api: testdata  # for developement
-	DEBUG=1 uvicorn ftmstore_fastapi.api:app --reload
+	CATALOG=./tests/fixtures/catalog.json DEBUG=1 uvicorn ftmstore_fastapi.api:app --reload
 
 
 install.dev:
