@@ -3,20 +3,51 @@ from typing import Any, Generator, TypeVar
 
 import orjson
 from fastapi import HTTPException
+from followthemoney import model
 from followthemoney.model import registry
 from followthemoney.util import join_text
 from ftmstore import get_dataset
 from nomenklatura.dataset import DataCatalog
 from nomenklatura.dataset import Dataset as NKDataset
 from nomenklatura.entity import CE
+from pydantic import BaseModel
 
 from .logging import get_logger
 from .query import AggregationQuery, Query
-from .settings import IN_MEMORY, INDEX_PROPERTIES, PRELOAD_DATASETS
-from .util import get_dehydrated_proxy, get_proxy, uplevel
+from .settings import DATASETS_STATS, IN_MEMORY, INDEX_PROPERTIES, PRELOAD_DATASETS
+from .util import get_country_name, get_dehydrated_proxy, get_proxy, uplevel
 
 DS = TypeVar("DS", bound="Dataset")
 Entities = Generator[CE, None, None]
+
+
+class Country(BaseModel):
+    code: str
+    count: int
+    label: str | None
+
+    def __init__(self, **data):
+        data["label"] = get_country_name(data["code"])
+        super().__init__(**data)
+
+
+class Schema(BaseModel):
+    name: str
+    count: int
+    label: str
+    plural: str
+
+    def __init__(self, **data):
+        schema = model.get(data["name"])
+        data["label"] = schema.label
+        data["plural"] = schema.plural
+        super().__init__(**data)
+
+
+class Things(BaseModel):
+    total: int | None = None
+    schemata: list[Schema] | None = []
+    countries: list[Country] | None = []
 
 
 class Dataset(NKDataset):
@@ -30,8 +61,11 @@ class Dataset(NKDataset):
         self.log = get_logger(__name__, dataset=str(self))
         self._connection = None
         self._loaded = False
+        self._things = Things()
         if PRELOAD_DATASETS:
             _ = self.connection
+        if DATASETS_STATS:
+            self._things = self.get_stats()
 
     def get(
         self,
@@ -91,6 +125,11 @@ class Dataset(NKDataset):
 
     def __str__(self) -> str:
         return self.name
+
+    def to_dict(self) -> dict[str, Any]:
+        data = super().to_dict()
+        data["things"] = self._things.dict()
+        return data
 
     @property
     def connection(self) -> sqlite3.Connection:
@@ -170,3 +209,21 @@ class Dataset(NKDataset):
             if ix and ix % 10_000 == 0:
                 self.log.info("Loading entity %d ..." % ix)
         self.log.info("Loading entity %d ..." % ix)
+
+    def get_stats(self) -> Things:
+        self.log.info("Generating statistics ...")
+        things = Things()
+        for res in self.connection.execute(f"SELECT COUNT(*) FROM {self.name}"):
+            things.total = res[0]
+        for name, count in self.connection.execute(
+            f"SELECT schema, COUNT(id) FROM {self.name} GROUP BY schema"
+        ):
+            things.schemata.append(Schema(name=name, count=count))
+        # FIXME this only works for sqlite:
+        for code, count in self.connection.execute(
+            f"""SELECT value, COUNT(DISTINCT {self.name}.id)
+            FROM {self.name}, json_each(json_extract(entity, '$.properties.country'))
+            GROUP BY value"""
+        ):
+            things.countries.append(Country(code=code, count=count))
+        return things

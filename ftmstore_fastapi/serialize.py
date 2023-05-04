@@ -14,7 +14,7 @@ from furl import furl
 from nomenklatura.entity import CE
 from pydantic import BaseModel, Field
 
-from .dataset import DataCatalog, Dataset, Entities
+from .dataset import DataCatalog, Dataset, Entities, Things
 from .query import ExtraQueryParams
 
 EntityProperties = dict[str, list[Union[str, "EntityResponse"]]]
@@ -167,6 +167,7 @@ class DatasetResponse(BaseModel):
     category: str | None = None
     frequency: str | None = None
     resources: list[Resource]
+    things: Things
     children: list[str]
 
     @classmethod

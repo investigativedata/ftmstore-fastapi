@@ -17,6 +17,7 @@ install.dev:
 testdata: clean
 	ftm store write -d ec_meetings -i ./tests/fixtures/ec_meetings.ftm.json
 	ftm store write -d eu_authorities -i ./tests/fixtures/eu_authorities.ftm.json
+	ftm store write -d gdho -i ./tests/fixtures/gdho.ftm.json
 
 test: install.dev testdata
 	pip install types-python-jose
