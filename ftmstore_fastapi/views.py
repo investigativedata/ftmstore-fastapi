@@ -54,15 +54,15 @@ def get_aggregation_params(
 
 
 @cache
-def dataset_list() -> DataCatalogResponse:
+def dataset_list(request: Request) -> DataCatalogResponse:
     catalog = get_catalog()
-    return DataCatalogResponse.from_catalog(catalog)
+    return DataCatalogResponse.from_catalog(request, catalog)
 
 
 @cache
-def dataset_detail(name: str) -> DatasetResponse:
+def dataset_detail(request: Request, name: str) -> DatasetResponse:
     dataset = get_dataset(name)
-    return DatasetResponse.from_dataset(dataset)
+    return DatasetResponse.from_dataset(request, dataset)
 
 
 @cache_view

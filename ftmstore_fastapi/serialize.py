@@ -4,6 +4,7 @@ https://github.com/opensanctions/yente/
 """
 
 from collections import defaultdict
+from datetime import datetime
 from typing import Any, Generator, Union
 
 from banal import clean_dict, ensure_dict
@@ -13,7 +14,7 @@ from furl import furl
 from nomenklatura.entity import CE
 from pydantic import BaseModel, Field
 
-from .dataset import DataCatalog, Dataset, Entities
+from .dataset import DataCatalog, Dataset, Entities, Things
 from .query import ExtraQueryParams
 
 EntityProperties = dict[str, list[Union[str, "EntityResponse"]]]
@@ -139,24 +140,55 @@ class AggregationResponse(BaseModel):
         )
 
 
+class Resource(BaseModel):
+    name: str
+    url: str
+    mime_type: str
+    mime_type_label: str
+
+
+class Publisher(BaseModel):
+    name: str | None = None
+    url: str | None = None
+    description: str | None = None
+    official: bool | None = None
+
+
 class DatasetResponse(BaseModel):
     name: str
     title: str
     summary: str | None = None
     url: str | None = None
+    publisher: Publisher | None = None
     load: bool | None = False
     entities_url: str | None = None
     version: str | None = "1"
+    updated_at: datetime | None = None
+    category: str | None = None
+    frequency: str | None = None
+    resources: list[Resource]
+    things: Things
     children: list[str]
 
     @classmethod
-    def from_dataset(cls, dataset: Dataset) -> "DatasetResponse":
-        return cls(**dataset.to_dict())
+    def from_dataset(cls, request: Request, dataset: Dataset) -> "DatasetResponse":
+        return cls(
+            **dataset.to_dict(),
+            entities_url=f"{request.base_url}{dataset.name}/entities",
+        )
 
 
 class DataCatalogResponse(BaseModel):
     datasets: list[DatasetResponse]
+    updated_at: datetime | None = None
 
     @classmethod
-    def from_catalog(cls, catalog: DataCatalog) -> "DataCatalogResponse":
-        return cls(datasets=[DatasetResponse.from_dataset(c) for c in catalog.datasets])
+    def from_catalog(
+        cls, request: Request, catalog: DataCatalog
+    ) -> "DataCatalogResponse":
+        return cls(
+            updated_at=catalog.updated_at,
+            datasets=[
+                DatasetResponse.from_dataset(request, c) for c in catalog.datasets
+            ],
+        )

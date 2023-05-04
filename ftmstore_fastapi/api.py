@@ -44,14 +44,14 @@ log.info("Ftm store: %s" % DATABASE_URI)
         500: {"model": ErrorResponse, "description": "Server error"},
     },
 )
-async def dataset_list() -> DataCatalogResponse:
+async def dataset_list(request: Request) -> DataCatalogResponse:
     """
     Show metadata for catalog (as described in
     [nomenklatura.DataCatalog](https://github.com/opensanctions/nomenklatura))
 
     This is basically a list of the available dataset within this api instance.
     """
-    return views.dataset_list()
+    return views.dataset_list(request)
 
 
 # cache at boot time
@@ -66,12 +66,12 @@ Datasets = Literal[tuple(catalog.names)]
         500: {"model": ErrorResponse, "description": "Server error"},
     },
 )
-async def dataset_detail(dataset: Datasets) -> DatasetResponse:
+async def dataset_detail(request: Request, dataset: Datasets) -> DatasetResponse:
     """
     Show metadata for given dataset (as described in
     [nomenklatura.Dataset](https://github.com/opensanctions/nomenklatura))
     """
-    return views.dataset_detail(dataset)
+    return views.dataset_detail(request, dataset)
 
 
 def get_authenticated(

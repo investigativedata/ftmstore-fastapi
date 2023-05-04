@@ -12,7 +12,7 @@ from .logging import get_logger
 
 log = get_logger(__name__)
 
-PREFIX = f"ftmstore_fastapi-{settings.VERSION}"
+PREFIX = f"ftmstore_fastapi:{settings.VERSION}"
 
 
 class Cache:
@@ -76,7 +76,6 @@ def cache_view(func):
         if res is not None:
             return serializer.loads(res)
         res = func(request, *args, **kwargs)
-        res = res.dict()
         cache.set(key, serializer.dumps(res))
         return res
 

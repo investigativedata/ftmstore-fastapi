@@ -12,6 +12,7 @@ if CATALOG is not None:
     CATALOG = Path(CATALOG)
 
 DATASETS = os.environ.get("EXPOSE_DATASETS", "*")  # all by default
+DATASETS_STATS = as_bool(os.environ.get("DATASETS_STATS", 1))
 
 DEBUG = as_bool(os.environ.get("DEBUG", 0))
 LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
@@ -34,7 +35,7 @@ CONTACT = {
     "url": os.environ.get(
         "CONTACT_URL", "https://github.com/simonwoerpel/ftmstore-fastapi/"
     ),
-    "email": os.environ.get("CONTACT_EMAIL", "simon.woerpel@medienrevolte.de"),
+    "email": os.environ.get("CONTACT_EMAIL", "simon@investigativedata.org"),
 }
 DESCRIPTION = """
 This api exposes a

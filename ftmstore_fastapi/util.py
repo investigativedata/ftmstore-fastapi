@@ -1,5 +1,7 @@
+from functools import cache
 from typing import Any
 
+import pycountry
 from followthemoney import model
 from followthemoney.model import registry
 from followthemoney.proxy import E
@@ -34,3 +36,12 @@ def get_dehydrated_proxy(
         else:
             dehydrated.add(prop, proxy.get(prop))
     return dehydrated
+
+
+@cache
+def get_country_name(alpha2: str) -> str:
+    try:
+        country = pycountry.countries.get(alpha_2=alpha2.lower())
+        return country.name
+    except (LookupError, AttributeError):
+        return
