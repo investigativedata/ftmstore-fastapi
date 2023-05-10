@@ -15,6 +15,13 @@ def get_proxy(data: dict[str, Any]) -> CE:
     return CompositeEntity.from_dict(model, data)
 
 
+def get_proxy_caption(proxy: CE) -> str:
+    for prop in proxy.schema.caption:
+        for value in proxy.get(prop):
+            return value
+    return proxy.schema.label
+
+
 def get_dehydrated_proxy(
     data: dict[str, Any] | E | CE, include_context: bool = True
 ) -> CE:
@@ -24,20 +31,17 @@ def get_dehydrated_proxy(
     """
     proxy = get_proxy(data)
     dehydrated = get_proxy(
-        {"id": proxy.id, "schema": proxy.schema.name, "caption": proxy.caption}
+        {
+            "id": proxy.id,
+            "schema": proxy.schema.name,
+            "caption": get_proxy_caption(proxy),
+        }
     )
     if include_context:
         dehydrated.datasets = proxy.datasets
         dehydrated.referents = proxy.referents
         dehydrated.context = proxy.context
     return dehydrated
-
-
-def get_proxy_caption(proxy: CE) -> str:
-    for prop in proxy.schema.caption:
-        for value in proxy.get(prop):
-            return value
-    return proxy.schema.label
 
 
 @cache

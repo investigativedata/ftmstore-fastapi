@@ -15,7 +15,13 @@ from pydantic import BaseModel
 from .logging import get_logger
 from .query import AggregationQuery, Query
 from .settings import DATASETS_STATS, IN_MEMORY, INDEX_PROPERTIES, PRELOAD_DATASETS
-from .util import get_country_name, get_dehydrated_proxy, get_proxy, uplevel
+from .util import (
+    get_country_name,
+    get_dehydrated_proxy,
+    get_proxy,
+    get_proxy_caption,
+    uplevel,
+)
 
 DS = TypeVar("DS", bound="Dataset")
 Entities = Generator[CE, None, None]
@@ -194,7 +200,7 @@ class Dataset(NKDataset):
         ix = 0
         for ix, proxy in enumerate(store.iterate()):
             if proxy.schema.is_a("Thing"):
-                txt = set([proxy.caption, *proxy.names])
+                txt = set([get_proxy_caption(proxy), *proxy.names])
                 props = []
                 for prop in INDEX_PROPERTIES:
                     if proxy.has(prop, quiet=True):
