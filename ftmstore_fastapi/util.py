@@ -16,6 +16,9 @@ def get_proxy(data: dict[str, Any]) -> CE:
 
 
 def get_proxy_caption(proxy: CE) -> str:
+    # FIXME
+    if proxy.caption != proxy.schema.label:
+        return proxy.caption
     for prop in proxy.schema.caption:
         for value in proxy.get(prop):
             return value
@@ -30,12 +33,9 @@ def get_dehydrated_proxy(
     and optionally context
     """
     proxy = get_proxy(data)
+    caption = get_proxy_caption(proxy)
     dehydrated = get_proxy(
-        {
-            "id": proxy.id,
-            "schema": proxy.schema.name,
-            "caption": get_proxy_caption(proxy),
-        }
+        {"id": proxy.id, "schema": proxy.schema.name, "caption": caption}
     )
     if include_context:
         dehydrated.datasets = proxy.datasets
