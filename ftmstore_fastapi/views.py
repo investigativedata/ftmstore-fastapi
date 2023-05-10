@@ -79,6 +79,7 @@ def entity_list(
         request=request,
         entities=dataset.get_entities(query, **retrieve_params.dict()),
         total=dataset.get_count(query),
+        schemata=dataset.get_schemata_groups(query),
         authenticated=authenticated,
     )
 
@@ -115,6 +116,7 @@ def search(
         request=request,
         entities=dataset.get_entities(query, **retrieve_params.dict()),
         total=dataset.get_count(query),
+        schemata=dataset.get_schemata_groups(query),
     )
 
 

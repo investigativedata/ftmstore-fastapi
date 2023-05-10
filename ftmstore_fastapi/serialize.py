@@ -78,6 +78,7 @@ EntityResponse.update_forward_refs()
 class EntitiesResponse(BaseModel):
     total: int
     items: int
+    schemata: dict[str, int]
     query: ExtraQueryParams
     url: str
     next_url: str | None = None
@@ -90,6 +91,7 @@ class EntitiesResponse(BaseModel):
         request: Request,
         entities: Entities,
         total: int,
+        schemata: dict[str, int],
         authenticated: bool | None = False,
     ) -> "EntitiesResponse":
         query = ExtraQueryParams.from_request(request, authenticated)
@@ -103,6 +105,7 @@ class EntitiesResponse(BaseModel):
             items=len(entities),
             query=query,
             entities=entities,
+            schemata=schemata,
             url=str(url),
         )
         if query.page > 1:

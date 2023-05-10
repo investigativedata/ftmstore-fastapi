@@ -1,3 +1,4 @@
+import copy
 import sqlite3
 from typing import Any, Generator, TypeVar
 
@@ -121,6 +122,17 @@ class Dataset(NKDataset):
     def get_count(self, query: Query) -> int:
         for i, *rest in self.connection.execute(query.count, tuple(query.parameters)):
             return i
+
+    def get_schemata_groups(self, query: Query) -> dict[str, int]:
+        # FIXME
+        query = copy.deepcopy(query)
+        query.limit = None
+        query.order_by_fields = None
+        q = str(query)
+        q = q.replace(query.select_part, "t.schema, COUNT(*)")
+        q = q + " GROUP BY t.schema"
+        res = self.connection.execute(q, tuple(query.parameters))
+        return dict([x for x in res])
 
     def nest(self, proxy: CE, dehydrate: bool = False) -> CE:
         q = Query(self.name).where(id__in=proxy.get_type_values(registry.entity))
