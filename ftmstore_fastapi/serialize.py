@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from .dataset import DataCatalog, Dataset, Entities, Things
 from .query import ExtraQueryParams
+from .util import get_proxy_caption
 
 EntityProperties = dict[str, list[Union[str, "EntityResponse"]]]
 Aggregations = dict[str, dict[str, Any]]
@@ -58,7 +59,7 @@ class EntityResponse(BaseModel):
                     ]
         return cls(
             id=entity.id,
-            caption=entity.caption,
+            caption=get_proxy_caption(entity),
             schema=entity.schema.name,
             properties=properties,
             datasets=list(entity.datasets),

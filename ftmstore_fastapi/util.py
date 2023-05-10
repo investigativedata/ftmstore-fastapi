@@ -33,6 +33,13 @@ def get_dehydrated_proxy(
     return dehydrated
 
 
+def get_proxy_caption(proxy: CE) -> str:
+    for prop in proxy.schema.caption:
+        for value in proxy.get(prop):
+            return value
+    return proxy.schema.label
+
+
 @cache
 def get_country_name(alpha2: str) -> str:
     try:
