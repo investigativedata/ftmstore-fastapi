@@ -121,7 +121,7 @@ class ApiTestCase(TestCase):
         )
 
     def test_api_search(self):
-        res = self.client.get("/eu_authorities/search?q=germany&dehydrate=1")
+        res = self.client.get("/eu_authorities/entities?q=germany&dehydrate=1")
         res = res.json()
         self.assertEqual(res["items"], 1)
         # self.assertDictEqual(
