@@ -1,12 +1,20 @@
 # ftmstore-fastapi
 
-Expose a [followthemoney-store](https://github.com/alephdata/followthemoney-store) to a readonly [FastAPI](https://fastapi.tiangolo.com/)
+Expose a [followthemoney-store](https://github.com/alephdata/followthemoney-store)
+to a readonly [FastAPI](https://fastapi.tiangolo.com/)
 
-The api features filtering for entity `Schema` and `Property` values, sorting and a search endpoint to query against a [sqlite full-text index](https://www.sqlite.org/fts5.html) that contains the values for [name type](https://alephdata.github.io/followthemoney/explorer/types/name/) properties.
+An example instance is deployed here: https://api.investigraph.ftm.store
 
-By default, the whole dataset(s) are loaded into an in-memory sqlite to provide very fast and cached responses.
+The api features filtering for entity `Schema` and `Property` values, sorting
+and a search endpoint to query against a [sqlite full-text index](https://www.sqlite.org/fts5.html)
+that contains the values for [name type](https://alephdata.github.io/followthemoney/explorer/types/name/)
+properties.
 
-For mid-scale datasets (up to 1GB json dump, didn't test bigger ones yet) the api is incredibly fast when using the in-memory sqlite.
+By default, the whole dataset(s) are loaded into an in-memory sqlite to provide
+very fast and cached responses.
+
+For mid-scale datasets (up to 1GB json dump, didn't test bigger ones yet) the
+api is incredibly fast when using the in-memory sqlite.
 
 There are two main api endpoints:
 
