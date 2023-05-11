@@ -32,13 +32,13 @@ class QueryParams(BaseModel):
             if prop.startswith("context."):
                 return prop
             if prop not in constants.PROPERTIES:
-                raise HTTPException(400, detail=f"Invalid ftm property: `{prop}`")
+                raise HTTPException(400, detail=[f"Invalid ftm property: `{prop}`"])
         return prop
 
     @validator("schema_")
     def validate_schema(cls, value: str | None) -> bool:
         if value is not None and value not in constants.SCHEMATA:
-            raise HTTPException(400, detail=f"Invalid ftm schema: `{value}`")
+            raise HTTPException(400, detail=[f"Invalid ftm schema: `{value}`"])
         return value
 
 
@@ -166,11 +166,13 @@ class Query:
     def __getitem__(self, value) -> "Query":
         if isinstance(value, int):
             if value < 0:
-                raise HTTPException(400, "Invalid slicing: slice must not be negative.")
+                raise HTTPException(
+                    400, detail=["Invalid slicing: slice must not be negative."]
+                )
             return self._chain(limit=1, offset=value)
         if isinstance(value, slice):
             if value.step is not None:
-                raise HTTPException(400, "Invalid slicing: steps not allowed.")
+                raise HTTPException(400, detail=["Invalid slicing: steps not allowed."])
             offset = value.start or 0
             if value.stop is not None:
                 return self._chain(limit=value.stop - offset, offset=offset)
@@ -210,10 +212,10 @@ class Query:
                 if field.rstrip("[]") not in self.META_FIELDS | constants.PROPERTIES:
                     if field not in constants.PROPERTIES:
                         raise HTTPException(
-                            400, f"Lookup `{field}`: Invalid FtM property."
+                            400, detail=[f"Lookup `{field}`: Invalid FtM property."]
                         )
                     raise HTTPException(
-                        400, f"Lookup `{field}` not any of {self.META_FIELDS}"
+                        400, detail=[f"Lookup `{field}` not any of {self.META_FIELDS}"]
                     )
 
             p_value = "?"
@@ -221,10 +223,10 @@ class Query:
 
             if operator:
                 if len(operator) > 1:
-                    raise HTTPException(400, f"Invalid operator: {operator}")
+                    raise HTTPException(400, detail=[f"Invalid operator: {operator}"])
                 operator = operator[0]
                 if operator not in self.OPERATORS:
-                    raise HTTPException(400, f"Invalid operator: {operator}")
+                    raise HTTPException(400, detail=[f"Invalid operator: {operator}"])
 
                 if operator == "in":
                     # q.where(field__in=["a", "b"])
@@ -297,7 +299,9 @@ class Query:
             return
         offset = self.offset or 0
         if self.limit < -1:
-            raise HTTPException(400, f"Limit {self.limit} must not be negative")
+            raise HTTPException(
+                400, detail=[f"Limit {self.limit} must not be negative"]
+            )
         return f"LIMIT {self.limit} OFFSET {offset}"
 
     @property
