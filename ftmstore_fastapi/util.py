@@ -8,11 +8,15 @@ from nomenklatura.entity import CE, CompositeEntity
 
 
 def uplevel(proxy: E) -> CE:
-    return CompositeEntity.from_dict(model, proxy.to_dict())
+    proxy = CompositeEntity.from_dict(model, proxy.to_dict())
+    proxy.context.pop("caption", None)
+    return proxy
 
 
 def get_proxy(data: dict[str, Any]) -> CE:
-    return CompositeEntity.from_dict(model, data)
+    proxy = CompositeEntity.from_dict(model, data)
+    proxy.context.pop("caption", None)
+    return proxy
 
 
 def get_proxy_caption(proxy: CE) -> str:
