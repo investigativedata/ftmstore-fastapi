@@ -44,6 +44,23 @@ def get_dehydrated_proxy(
     return dehydrated
 
 
+def get_featured_proxy(
+    data: dict[str, Any] | E | CE, include_context: bool = True
+) -> CE:
+    """
+    reduce proxy payload to only include featured properties and optionally context
+    """
+    proxy = get_proxy(data)
+    featured = get_dehydrated_proxy(data)
+    if include_context:
+        featured.datasets = proxy.datasets
+        featured.referents = proxy.referents
+        featured.context = proxy.context
+    for prop in proxy.schema.featured:
+        featured.add(prop, proxy.get(prop))
+    return featured
+
+
 @cache
 def get_country_name(alpha2: str) -> str:
     try:

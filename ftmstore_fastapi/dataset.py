@@ -1,4 +1,3 @@
-import copy
 import sqlite3
 from typing import Any, Generator, TypeVar
 
@@ -19,6 +18,7 @@ from .settings import DATASETS_STATS, IN_MEMORY, INDEX_PROPERTIES, PRELOAD_DATAS
 from .util import (
     get_country_name,
     get_dehydrated_proxy,
+    get_featured_proxy,
     get_proxy,
     get_proxy_caption,
     uplevel,
@@ -74,13 +74,16 @@ class Dataset(NKDataset):
         if DATASETS_STATS:
             self._things = self.get_stats()
 
-    def get(
+    def get_entity(
         self,
         entity_id: str,
         nested: bool | None = False,
         dehydrate: bool = False,
         dehydrate_nested: bool = True,
     ) -> CE | None:
+        """
+        retrieve a single entity from the store based on its ID
+        """
         q = Query(self.name).where(id=entity_id)
         for proxy in self.get_entities(
             q, nested=nested, dehydrate=dehydrate, dehydrate_nested=dehydrate_nested
@@ -96,9 +99,13 @@ class Dataset(NKDataset):
         self,
         query: Query,
         nested: bool | None = False,
+        featured: bool | None = False,
         dehydrate: bool = False,
         dehydrate_nested: bool = True,
     ) -> Entities:
+        """
+        retrieve multiple entities from the store based on filter criteria
+        """
         for id_, schema, entity, *rest in self.connection.execute(
             str(query), tuple(query.parameters)
         ):
@@ -106,6 +113,8 @@ class Dataset(NKDataset):
             data["id"] = id_
             if dehydrate:
                 proxy = get_dehydrated_proxy(data)
+            elif featured:
+                proxy = get_featured_proxy(data)
             else:
                 proxy = get_proxy(data)
             if nested:
@@ -124,14 +133,7 @@ class Dataset(NKDataset):
             return i
 
     def get_schemata_groups(self, query: Query) -> dict[str, int]:
-        # FIXME
-        query = copy.deepcopy(query)
-        query.limit = None
-        query.order_by_fields = None
-        q = str(query)
-        q = q.replace(query.select_part, "t.schema, COUNT(*)")
-        q = q + " GROUP BY t.schema"
-        res = self.connection.execute(q, tuple(query.parameters))
+        res = self.connection.execute(query.schemata, tuple(query.parameters))
         return dict([x for x in res])
 
     def nest(self, proxy: CE, dehydrate: bool = False) -> CE:

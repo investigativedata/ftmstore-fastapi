@@ -329,6 +329,11 @@ class Query:
         q = self._chain(limit=None, offset=None, order_by_fields=None)
         return f"SELECT COUNT(*) FROM ({q.to_str()})"
 
+    @property
+    def schemata(self) -> str:
+        q = self._chain(limit=None, offset=None, order_by_fields=None)
+        return f"SELECT schema, COUNT(*) FROM ({q.to_str()}) GROUP BY schema"
+
     @classmethod
     def from_params(cls, table: str, params: ExtraQueryParams) -> "Query":
         q = cls(table)[(params.page - 1) * params.limit : params.page * params.limit]
@@ -345,7 +350,15 @@ class Query:
         extra = {
             k: v
             for k, v in extra.items()
-            if k not in ("api_key", "nested", "dehydrate", "dehydrate_nested", "q")
+            if k
+            not in (
+                "api_key",
+                "nested",
+                "featured",
+                "dehydrate",
+                "dehydrate_nested",
+                "q",
+            )
         }
         if extra:
             q = q.where(**extra)
