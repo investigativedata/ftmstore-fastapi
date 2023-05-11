@@ -220,19 +220,18 @@ class Dataset(NKDataset):
         store = get_dataset(self.name)
         ix = 0
         for ix, proxy in enumerate(store.iterate()):
-            if proxy.schema.is_a("Thing"):
-                txt = set([get_proxy_caption(proxy), *proxy.names])
-                props = []
-                for prop in INDEX_PROPERTIES:
-                    if proxy.has(prop, quiet=True):
-                        props.extend(proxy.get(prop))
-                search = join_text(
-                    *txt,
-                    *props,
-                    *proxy.countries,
-                    *proxy.get_type_values(registry.identifier),
-                )
-                yield proxy.id, search
+            txt = set([get_proxy_caption(proxy), *proxy.names])
+            props = []
+            for prop in proxy.schema.featured + INDEX_PROPERTIES:
+                if proxy.has(prop, quiet=True):
+                    props.extend(proxy.get(prop))
+            search = join_text(
+                *txt,
+                *props,
+                *proxy.countries,
+                *proxy.get_type_values(registry.identifier),
+            )
+            yield proxy.id, search
             if ix and ix % 10_000 == 0:
                 self.log.info("Loading entity %d ..." % ix)
         self.log.info("Loading entity %d ..." % ix)
