@@ -95,6 +95,7 @@ def get_authenticated(
 async def list_entities(
     request: Request,
     dataset: Datasets,
+    q: str = Query(None, title="Search string"),
     params: QueryParams = Depends(QueryParams),
     retrieve_params: views.RetrieveParams = Depends(views.get_retrieve_params),
     authenticated: bool = Depends(get_authenticated),
@@ -143,11 +144,18 @@ async def list_entities(
     uncasted, aka all properties are multi values as string)
 
     For arbitrary context data: `?order_by=context.foo`
+
+    ## searching
+
+    Search entities in the [FTS5-Index](https://www.sqlite.org/fts5.html)
+
+    Use optional `q` parameter for a search term.
     """
     return views.entity_list(
         request,
         dataset,
         retrieve_params,
+        q=q,
         authenticated=authenticated,
     )
 
@@ -163,7 +171,7 @@ async def list_entities(
 )
 async def detail_entity(
     request: Request,
-    dataset: str,
+    dataset: Datasets,
     entity_id: str,
     retrieve_params: views.RetrieveParams = Depends(views.get_retrieve_params),
 ) -> EntityResponse | RedirectResponse | ErrorResponse:
@@ -183,29 +191,6 @@ async def detail_entity(
 
 
 @app.get(
-    "/{dataset}/search",
-    response_model=EntitiesResponse,
-    responses={
-        500: {"model": ErrorResponse, "description": "Server error"},
-    },
-)
-async def search(
-    request: Request,
-    dataset: str,
-    q: str = Query(None, title="Search string"),
-    params: QueryParams = Depends(QueryParams),
-    retrieve_params: views.RetrieveParams = Depends(views.get_retrieve_params),
-) -> EntitiesResponse:
-    """
-    Search entities in the [FTS5-Index](https://www.sqlite.org/fts5.html)
-
-    All other parameters from the entities list view for optional filtering of
-    the search result can be used here as well.
-    """
-    return views.search(request, dataset, retrieve_params, q)
-
-
-@app.get(
     "/{dataset}/aggregate",
     response_model=AggregationResponse,
     responses={
@@ -214,7 +199,7 @@ async def search(
 )
 async def aggregation(
     request: Request,
-    dataset: str,
+    dataset: Datasets,
     q: str = Query(None, title="Search string"),
     params: QueryParams = Depends(QueryParams),
     aggregation_params: views.AggregationParams = Depends(views.get_aggregation_params),

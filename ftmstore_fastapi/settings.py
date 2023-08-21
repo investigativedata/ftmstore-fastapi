@@ -25,7 +25,6 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
 DEFAULT_LIMIT = 100
 LOG_JSON = as_bool(os.environ.get("LOG_JSON", 0))
 IN_MEMORY = as_bool(os.environ.get("SQLITE_IN_MEMORY", 1))
-PRELOAD_DATASETS = as_bool(os.environ.get("PRELOAD_DATASETS", 0))
 INDEX_PROPERTIES = os.environ.get("INDEX_PROPERTIES", "").split(",")
 
 # Api documentation render

@@ -26,6 +26,7 @@ from .store import get_catalog, get_dataset
 
 class RetrieveParams(BaseModel):
     nested: bool
+    featured: bool
     dehydrate: bool
     dehydrate_nested: bool
 
@@ -34,13 +35,19 @@ def get_retrieve_params(
     nested: bool = QueryField(
         False, description="Inline adjacent entities instead of their ids"
     ),
+    featured: bool = QueryField(
+        False, description="Only include featured properties and caption"
+    ),
     dehydrate: bool = QueryField(
-        False, description="Only include featured properties and 1 name (caption)"
+        False, description="Only include id, schema and caption"
     ),
     dehydrate_nested: bool = QueryField(True, description="Dehydrate nested entities"),
 ) -> RetrieveParams:
     return RetrieveParams(
-        nested=nested, dehydrate=dehydrate, dehydrate_nested=dehydrate_nested
+        nested=nested,
+        featured=featured,
+        dehydrate=dehydrate,
+        dehydrate_nested=dehydrate_nested,
     )
 
 
@@ -70,15 +77,21 @@ def entity_list(
     request: Request,
     dataset: str,
     retrieve_params: RetrieveParams,
+    q: str | None = None,
     authenticated: bool | None = False,
 ) -> EntitiesResponse:
     dataset = get_dataset(dataset)
     params = ExtraQueryParams.from_request(request, authenticated)
-    query = Query.from_params(dataset.name, params)
+    if q:
+        query = SearchQuery.from_params(dataset.name, params)
+        query.term = q
+    else:
+        query = Query.from_params(dataset.name, params)
     return EntitiesResponse.from_view(
         request=request,
         entities=dataset.get_entities(query, **retrieve_params.dict()),
         total=dataset.get_count(query),
+        schemata=dataset.get_schemata_groups(query),
         authenticated=authenticated,
     )
 
@@ -88,7 +101,7 @@ def entity_detail(
     request: Request, dataset: str, entity_id: str, retrieve_params: RetrieveParams
 ) -> EntityResponse | RedirectResponse:
     dataset = get_dataset(dataset)
-    entity = dataset.get(entity_id, **retrieve_params.dict())
+    entity = dataset.get_entity(entity_id, **retrieve_params.dict())
     if entity.id != entity_id:  # we have a redirect to a merged entity
         url = furl(request.url)
         url.path.segments[-1] = entity.id
@@ -97,25 +110,6 @@ def entity_detail(
         response.headers["X-Entity-Schema"] = entity.schema.name
         return response
     return EntityResponse.from_entity(entity)
-
-
-@cache_view
-def search(
-    request: Request,
-    dataset: str,
-    retrieve_params: RetrieveParams,
-    q: str | None = None,
-) -> EntitiesResponse:
-    dataset = get_dataset(dataset)
-    params = ExtraQueryParams.from_request(request)
-    query = SearchQuery.from_params(dataset.name, params)
-    if q:
-        query.term = q
-    return EntitiesResponse.from_view(
-        request=request,
-        entities=dataset.get_entities(query, **retrieve_params.dict()),
-        total=dataset.get_count(query),
-    )
 
 
 @cache_view

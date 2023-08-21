@@ -6,13 +6,14 @@ import redis
 from cachelib.serializers import RedisSerializer
 from fastapi import Request
 from followthemoney.util import make_entity_id
+from normality import slugify
 
 from . import settings
 from .logging import get_logger
 
 log = get_logger(__name__)
 
-PREFIX = f"ftmstore_fastapi:{settings.VERSION}"
+PREFIX = f"ftmstore_fastapi:{settings.VERSION}:{slugify(settings.TITLE)}"
 
 
 class Cache:

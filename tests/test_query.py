@@ -1,9 +1,10 @@
 from unittest import TestCase
 
+from fastapi import HTTPException
+
 from ftmstore_fastapi.query import (
     AggregationParams,
     AggregationQuery,
-    InvalidQuery,
     Query,
     SearchQuery,
 )
@@ -168,32 +169,32 @@ class QueryTestCase(TestCase):
         self.assertSequenceEqual([], [x for x in q.parameters])
 
     def test_query_invalid(self):
-        with self.assertRaisesRegex(InvalidQuery, "must not be negative"):
+        with self.assertRaisesRegex(HTTPException, "400"):
             q = Query(self.table)[-1]
             str(q)
 
-        with self.assertRaisesRegex(InvalidQuery, "must not be negative"):
+        with self.assertRaisesRegex(HTTPException, "400"):
             q = Query(self.table)[100:50]
             str(q)
 
-        with self.assertRaisesRegex(InvalidQuery, "steps not allowed"):
+        with self.assertRaisesRegex(HTTPException, "400"):
             q = Query(self.table)[100:50:2]
             str(q)
 
-        with self.assertRaisesRegex(InvalidQuery, "Invalid operator"):
+        with self.assertRaisesRegex(HTTPException, "400"):
             q = Query(self.table).where(name__invalid_op=0)
             str(q)
 
-        with self.assertRaisesRegex(InvalidQuery, "Invalid operator"):
+        with self.assertRaisesRegex(HTTPException, "400"):
             q = Query(self.table).where(name__invalid__op=0)
             str(q)
 
         # invalid ftm_columnstore_test props
-        with self.assertRaisesRegex(InvalidQuery, "Invalid FtM property"):
+        with self.assertRaisesRegex(HTTPException, "400"):
             q = Query(self.table).where(invalid_prop=0)
             str(q)
 
-        with self.assertRaisesRegex(InvalidQuery, "Invalid FtM property"):
+        with self.assertRaisesRegex(HTTPException, "400"):
             q = Query(self.table).where(invalid_prop__like=0)
             str(q)
 
@@ -245,3 +246,21 @@ class QueryTestCase(TestCase):
                 q,
                 "SELECT SUM(value) AS aggSum FROM (SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.amount') AS amount FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(amount) WHERE CAST(value AS NUMERIC) > ?)) ORDER BY CAST(json_extract(amount, '$[0]') AS NUMERIC) ASC) t, json_each(json_extract(t.entity, '$.properties.amount'))",
             )
+
+    def test_query_schemata_groups(self):
+        q = Query(self.table)
+        self.assertEqual(
+            q.schemata,
+            "SELECT schema, COUNT(*) FROM (SELECT t.id, t.schema, t.entity FROM ftm_test t) GROUP BY schema",
+        )
+        self.assertEqual(
+            q.schemata, f"SELECT schema, COUNT(*) FROM ({q}) GROUP BY schema"
+        )
+        q = Query(self.table).where(country="fr")
+        self.assertEqual(
+            q.schemata, f"SELECT schema, COUNT(*) FROM ({q}) GROUP BY schema"
+        )
+        self.assertEqual(
+            q.schemata,
+            "SELECT schema, COUNT(*) FROM (SELECT t.id, t.schema, t.entity, json_extract(t.entity, '$.properties.country') AS country FROM ftm_test t WHERE (EXISTS (SELECT 1 FROM json_each(country) WHERE value = ?))) GROUP BY schema",
+        )

@@ -1,21 +1,29 @@
 # ftmstore-fastapi
 
-Expose a [followthemoney-store](https://github.com/alephdata/followthemoney-store) to a readonly [FastAPI](https://fastapi.tiangolo.com/)
+Expose a [followthemoney-store](https://github.com/alephdata/followthemoney-store)
+to a readonly [FastAPI](https://fastapi.tiangolo.com/)
 
-The api features filtering for entity `Schema` and `Property` values, sorting and a search endpoint to query against a [sqlite full-text index](https://www.sqlite.org/fts5.html) that contains the values for [name type](https://alephdata.github.io/followthemoney/explorer/types/name/) properties.
+An example instance is deployed here: https://api.investigraph.ftm.store
 
-By default, the whole dataset(s) are loaded into an in-memory sqlite to provide very fast and cached responses.
+The api features filtering for entity `Schema` and `Property` values, sorting
+and a search endpoint to query against a [sqlite full-text index](https://www.sqlite.org/fts5.html)
+that contains the values for [name type](https://alephdata.github.io/followthemoney/explorer/types/name/)
+properties.
 
-For mid-scale datasets (up to 1GB json dump, didn't test bigger ones yet) the api is incredibly fast when using the in-memory sqlite.
+By default, the whole dataset(s) are loaded into an in-memory sqlite to provide
+very fast and cached responses.
 
-There are three main api endpoints:
+For mid-scale datasets (up to 1GB json dump, didn't test bigger ones yet) the
+api is incredibly fast when using the in-memory sqlite.
+
+There are two main api endpoints:
 
 * Retrieve a single entity based on its id and dataset, optionally with inlined
   adjacent entities: `/{dataset}/entities/{entity_id}`
 * Retrieve a list of entities based on filter criteria and sorting, with
   pagination: `/{dataset}/entities?{params}`
-* Search for entities (by their name property types) via
-  [Sqlite FTS](https://www.sqlite.org/fts5.html): `/{dataset}/search?q=<search term>`
+    * Search for entities (by their name property types) via
+      [Sqlite FTS](https://www.sqlite.org/fts5.html): `/{dataset}/entities?q=<search term>`
 
 Two more endpoints for catalog / dataset metadata:
 
@@ -67,6 +75,13 @@ array is used as the sorting value. (The entity property dict remains
 uncasted, aka all properties are multi values as string)
 
 For arbitrary context data: `?order_by=context.foo`
+
+#### searching
+
+Add `q=<term>` GET parameter to the query.
+
+Per default, names, countries, identifiers and *featured* entity properties are
+indexed. See below for `INDEX_PROPERTIES` setting.
 
 #### aggregation
 
@@ -123,7 +138,6 @@ CACHE_TIMEOUT=0  # infinite
 REDIS_URL=redis://localhost:6379
 DEFAULT_LIMIT=100  # results per page
 SQLITE_IN_MEMORY=1  # 0 to disable
-PRELOAD_DATASETS=0  # lazy loading of datasets, set 1 to load all at startup
 INDEX_PROPERTIES=""  # comma-separated additional properties to add to the FTS index, e.g. : "keywords,notes"
 # for api docs rendering:
 TITLE=FollowTheMoney Store API"
@@ -149,3 +163,15 @@ Spin up dev server and populate with fixtures data:
 Run test & typing:
 
     make test
+
+## supported by
+
+Since March 2023, developing of this project is supported by
+[Media Tech Lab Bayern batch #3](https://github.com/media-tech-lab)
+
+<a href="https://www.media-lab.de/en/programs/media-tech-lab">
+    <img src="https://raw.githubusercontent.com/media-tech-lab/.github/main/assets/mtl-powered-by.png" width="240" title="Media Tech Lab powered by logo">
+</a>
+
+
+

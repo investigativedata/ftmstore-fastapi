@@ -48,5 +48,5 @@ def get_dataset(name: str) -> Dataset:
     catalog = get_catalog()
     dataset = catalog.get(name)
     if dataset is None:
-        raise HTTPException(404, detail=f"Dataset `{name}` not found.")
+        raise HTTPException(404, detail=[f"Dataset `{name}` not found."])
     return dataset

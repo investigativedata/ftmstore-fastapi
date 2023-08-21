@@ -12,10 +12,6 @@ from pydantic import BaseModel, Field, validator
 from . import constants, settings
 
 
-class InvalidQuery(Exception):
-    pass
-
-
 class QueryParams(BaseModel):
     limit: int | None = settings.DEFAULT_LIMIT
     page: int | None = 1
@@ -29,18 +25,20 @@ class QueryParams(BaseModel):
     value: str | None = Field(None, example="de")
 
     @validator("prop")
-    def validate_prop(cls, value: str | None) -> bool:
-        if value is not None:
-            if value.startswith("context."):
-                return value
-            if value not in constants.PROPERTIES:
-                raise HTTPException(400, detail=f"Invalid ftm property: `{value}`")
-        return value
+    def validate_prop(cls, prop: str | None) -> bool:
+        if prop is not None:
+            if prop == "reverse":
+                return prop
+            if prop.startswith("context."):
+                return prop
+            if prop not in constants.PROPERTIES:
+                raise HTTPException(400, detail=[f"Invalid ftm property: `{prop}`"])
+        return prop
 
     @validator("schema_")
     def validate_schema(cls, value: str | None) -> bool:
         if value is not None and value not in constants.SCHEMATA:
-            raise HTTPException(400, detail=f"Invalid ftm schema: `{value}`")
+            raise HTTPException(400, detail=[f"Invalid ftm schema: `{value}`"])
         return value
 
 
@@ -99,7 +97,7 @@ class Query:
         ORDER BY name DESC
     """
 
-    META_FIELDS = {"id", "schema", "entity", "datasets", "referents"}
+    META_FIELDS = {"id", "schema", "entity", "datasets", "referents", "reverse"}
     OPERATORS = {
         "like": "LIKE",
         "ilike": "LIKE",  # FIXME sqlite COLLATE NOCASE
@@ -168,11 +166,13 @@ class Query:
     def __getitem__(self, value) -> "Query":
         if isinstance(value, int):
             if value < 0:
-                raise InvalidQuery("Invalid slicing: slice must not be negative.")
+                raise HTTPException(
+                    400, detail=["Invalid slicing: slice must not be negative."]
+                )
             return self._chain(limit=1, offset=value)
         if isinstance(value, slice):
             if value.step is not None:
-                raise InvalidQuery("Invalid slicing: steps not allowed.")
+                raise HTTPException(400, detail=["Invalid slicing: steps not allowed."])
             offset = value.start or 0
             if value.stop is not None:
                 return self._chain(limit=value.stop - offset, offset=offset)
@@ -196,6 +196,8 @@ class Query:
 
         def _get_part(key: str, p_value: str, operator: str | None = None) -> str:
             operator = operator or "="
+            if key == "reverse":
+                return f"EXISTS (SELECT 1 FROM json_each(r.value) WHERE value {operator} {p_value})"
             if key in constants.PROPERTIES or key.endswith("[]"):
                 return f"EXISTS (SELECT 1 FROM json_each({self.slugify(key)}) WHERE {self.cast('value', key)} {operator} {p_value})"
             key = self.slugify(key)
@@ -209,9 +211,11 @@ class Query:
             if not field.startswith("context."):
                 if field.rstrip("[]") not in self.META_FIELDS | constants.PROPERTIES:
                     if field not in constants.PROPERTIES:
-                        raise InvalidQuery(f"Lookup `{field}`: Invalid FtM property.")
-                    raise InvalidQuery(
-                        f"Lookup `{field}` not any of {self.META_FIELDS}"
+                        raise HTTPException(
+                            400, detail=[f"Lookup `{field}`: Invalid FtM property."]
+                        )
+                    raise HTTPException(
+                        400, detail=[f"Lookup `{field}` not any of {self.META_FIELDS}"]
                     )
 
             p_value = "?"
@@ -219,10 +223,10 @@ class Query:
 
             if operator:
                 if len(operator) > 1:
-                    raise InvalidQuery(f"Invalid operator: {operator}")
+                    raise HTTPException(400, detail=[f"Invalid operator: {operator}"])
                 operator = operator[0]
                 if operator not in self.OPERATORS:
-                    raise InvalidQuery(f"Invalid operator: {operator}")
+                    raise HTTPException(400, detail=[f"Invalid operator: {operator}"])
 
                 if operator == "in":
                     # q.where(field__in=["a", "b"])
@@ -271,6 +275,12 @@ class Query:
         )
 
     @property
+    def from_part(self) -> str:
+        if "reverse" in ensure_dict(self.where_lookup):
+            return f"{self.table} t, json_each(t.entity, '$.properties') r"
+        return f"{self.table} t"
+
+    @property
     def where_part(self) -> str:
         if not self.where_lookup:
             return
@@ -289,7 +299,9 @@ class Query:
             return
         offset = self.offset or 0
         if self.limit < -1:
-            raise InvalidQuery(f"Limit {self.limit} must not be negative")
+            raise HTTPException(
+                400, detail=[f"Limit {self.limit} must not be negative"]
+            )
         return f"LIMIT {self.limit} OFFSET {offset}"
 
     @property
@@ -307,7 +319,7 @@ class Query:
             self.order_part,
             self.limit_part,
         )
-        q = f"SELECT {self.select_part} FROM {self.table} t"
+        q = f"SELECT {self.select_part} FROM {self.from_part}"
         if rest is not None:
             q = q + " " + rest
         return q
@@ -316,6 +328,11 @@ class Query:
     def count(self) -> str:
         q = self._chain(limit=None, offset=None, order_by_fields=None)
         return f"SELECT COUNT(*) FROM ({q.to_str()})"
+
+    @property
+    def schemata(self) -> str:
+        q = self._chain(limit=None, offset=None, order_by_fields=None)
+        return f"SELECT schema, COUNT(*) FROM ({q.to_str()}) GROUP BY schema"
 
     @classmethod
     def from_params(cls, table: str, params: ExtraQueryParams) -> "Query":
@@ -333,7 +350,15 @@ class Query:
         extra = {
             k: v
             for k, v in extra.items()
-            if k not in ("api_key", "nested", "dehydrate", "dehydrate_nested", "q")
+            if k
+            not in (
+                "api_key",
+                "nested",
+                "featured",
+                "dehydrate",
+                "dehydrate_nested",
+                "q",
+            )
         }
         if extra:
             q = q.where(**extra)

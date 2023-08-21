@@ -1,4 +1,5 @@
 import sqlite3
+import threading
 from typing import Any, Generator, TypeVar
 
 import orjson
@@ -14,8 +15,15 @@ from pydantic import BaseModel
 
 from .logging import get_logger
 from .query import AggregationQuery, Query
-from .settings import DATASETS_STATS, IN_MEMORY, INDEX_PROPERTIES, PRELOAD_DATASETS
-from .util import get_country_name, get_dehydrated_proxy, get_proxy, uplevel
+from .settings import DATASETS_STATS, IN_MEMORY, INDEX_PROPERTIES
+from .util import (
+    get_country_name,
+    get_dehydrated_proxy,
+    get_featured_proxy,
+    get_proxy,
+    get_proxy_caption,
+    uplevel,
+)
 
 DS = TypeVar("DS", bound="Dataset")
 Entities = Generator[CE, None, None]
@@ -59,39 +67,50 @@ class Dataset(NKDataset):
         data["title"] = data.get("title", data["name"].title())
         super().__init__(catalog, data)
         self.log = get_logger(__name__, dataset=str(self))
-        self._connection = None
-        self._loaded = False
+        self._connections = {}
+        self._lock = threading.RLock()
         self._things = Things()
-        if PRELOAD_DATASETS:
-            _ = self.connection
+        self.load()
         if DATASETS_STATS:
             self._things = self.get_stats()
 
-    def get(
+    def get_entity(
         self,
         entity_id: str,
         nested: bool | None = False,
+        featured: bool | None = False,
         dehydrate: bool = False,
         dehydrate_nested: bool = True,
     ) -> CE | None:
+        """
+        retrieve a single entity from the store based on its ID
+        """
         q = Query(self.name).where(id=entity_id)
         for proxy in self.get_entities(
-            q, nested=nested, dehydrate=dehydrate, dehydrate_nested=dehydrate_nested
+            q,
+            nested=nested,
+            featured=featured,
+            dehydrate=dehydrate,
+            dehydrate_nested=dehydrate_nested,
         ):
             return proxy
         # look up merged entities
         q = Query(self.name).where(**{"context.referents[]": entity_id})
         for proxy in self.get_entities(q):
             return proxy
-        raise HTTPException(404, detail=f"Entity with ID `{entity_id}` not found")
+        raise HTTPException(404, detail=[f"Entity with ID `{entity_id}` not found"])
 
     def get_entities(
         self,
         query: Query,
         nested: bool | None = False,
+        featured: bool | None = False,
         dehydrate: bool = False,
         dehydrate_nested: bool = True,
     ) -> Entities:
+        """
+        retrieve multiple entities from the store based on filter criteria
+        """
         for id_, schema, entity, *rest in self.connection.execute(
             str(query), tuple(query.parameters)
         ):
@@ -99,6 +118,8 @@ class Dataset(NKDataset):
             data["id"] = id_
             if dehydrate:
                 proxy = get_dehydrated_proxy(data)
+            elif featured:
+                proxy = get_featured_proxy(data)
             else:
                 proxy = get_proxy(data)
             if nested:
@@ -115,6 +136,10 @@ class Dataset(NKDataset):
     def get_count(self, query: Query) -> int:
         for i, *rest in self.connection.execute(query.count, tuple(query.parameters)):
             return i
+
+    def get_schemata_groups(self, query: Query) -> dict[str, int]:
+        res = self.connection.execute(query.schemata, tuple(query.parameters))
+        return dict([x for x in res])
 
     def nest(self, proxy: CE, dehydrate: bool = False) -> CE:
         q = Query(self.name).where(id__in=proxy.get_type_values(registry.entity))
@@ -133,45 +158,47 @@ class Dataset(NKDataset):
 
     @property
     def connection(self) -> sqlite3.Connection:
-        if self._connection is not None:
-            if self._loaded:
-                return self._connection
-        connection = self.load()
-        self._loaded = True
-        self._connection = connection
-        return connection
+        with self._lock:
+            tid = threading.get_ident()
+            if tid not in self._connections:
+                self._connections[tid] = self.get_connection()
+            return self._connections[tid]
 
-    def load(self) -> sqlite3.Connection:
+    def get_connection(self) -> sqlite3.Connection:
+        if IN_MEMORY:
+            return sqlite3.connect("file::memory:?cache=shared", uri=True)
+        else:
+            fp = f"./ftmstore_fastapi.{self.name}.db"
+            return sqlite3.connect(fp)
+
+    def load(self):
         """
         load complete dataset into sqlite memory table
         (can be deactivated with settings.IN_MEMORY=false)
         """
         if IN_MEMORY:
             self.log.info("Loading dataset table to memory ...")
-            connection = sqlite3.connect("file::memory:?cache=shared", uri=True)
         else:
             fp = f"./ftmstore_fastapi.{self.name}.db"
             self.log.info("Generating dataset table ...", fp=fp)
-            connection = sqlite3.connect(fp)
 
-        connection.execute(
+        self.connection.execute(
             f"CREATE TABLE {self.name} (id TEXT, schema TEXT, entity JSON)"
         )
-        connection.execute(f"CREATE INDEX {self.name}__ix ON {self.name}(id)")
-        connection.execute(f"CREATE INDEX {self.name}__sx ON {self.name}(schema)")
-        connection.execute("PRAGMA mmap_size = 30000000000")
-        connection.executemany(
+        self.connection.execute(f"CREATE INDEX {self.name}__ix ON {self.name}(id)")
+        self.connection.execute(f"CREATE INDEX {self.name}__sx ON {self.name}(schema)")
+        self.connection.execute("PRAGMA mmap_size = 30000000000")
+        self.connection.executemany(
             f"INSERT INTO {self.name} VALUES (?, ?, ?)", self.load_proxies()
         )
-        connection.execute(
+        self.connection.execute(
             f"CREATE VIRTUAL TABLE {self.name}__fts USING fts5(id UNINDEXED, text)"
         )
-        connection.executemany(
+        self.connection.executemany(
             f"INSERT INTO {self.name}__fts VALUES (?, ?)", self.load_search()
         )
-        connection.commit()
+        self.connection.commit()
         self.log.info("Done.")
-        return connection
 
     def load_proxies(self) -> Entities:
         self.log.info("Loading entities ...")
@@ -193,19 +220,18 @@ class Dataset(NKDataset):
         store = get_dataset(self.name)
         ix = 0
         for ix, proxy in enumerate(store.iterate()):
-            if proxy.schema.is_a("Thing"):
-                txt = set([proxy.caption, *proxy.names])
-                props = []
-                for prop in INDEX_PROPERTIES:
-                    if proxy.has(prop, quiet=True):
-                        props.extend(proxy.get(prop))
-                search = join_text(
-                    *txt,
-                    *props,
-                    *proxy.countries,
-                    *proxy.get_type_values(registry.identifier),
-                )
-                yield proxy.id, search
+            txt = set([get_proxy_caption(proxy), *proxy.names])
+            props = []
+            for prop in proxy.schema.featured + INDEX_PROPERTIES:
+                if proxy.has(prop, quiet=True):
+                    props.extend(proxy.get(prop))
+            search = join_text(
+                *txt,
+                *props,
+                *proxy.countries,
+                *proxy.get_type_values(registry.identifier),
+            )
+            yield proxy.id, search
             if ix and ix % 10_000 == 0:
                 self.log.info("Loading entity %d ..." % ix)
         self.log.info("Loading entity %d ..." % ix)
