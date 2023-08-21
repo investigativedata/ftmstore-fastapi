@@ -1182,7 +1182,7 @@ sqlalchemy = "^2.0.19"
 type = "git"
 url = "https://github.com/investigativedata/ftmq"
 reference = "develop"
-resolved_reference = "53bbd90c28cfe598dbbed9a8b38aaa0d137adcc9"
+resolved_reference = "b759a2fec657c6229b5f6d5b4419d217ef88058f"
 
 [[package]]
 name = "furl"
