@@ -14,16 +14,18 @@ install.dev:
 	pip install coverage pytest pytest-cov black flake8 isort ipdb mypy bump2version
 
 followthemoney.store:
-	ftmq --store-dataset ec_meetings -i ./tests/fixtures/ec_meetings.ftm.json -o $(FTM_STORE_URI)
-	ftmq --store-dataset eu_authorities -i ./tests/fixtures/eu_authorities.ftm.json -o $(FTM_STORE_URI)
-	ftmq --store-dataset gdho -i ./tests/fixtures/gdho.ftm.json -o $(FTM_STORE_URI)
+	poetry run ftmq --store-dataset ec_meetings -i ./tests/fixtures/ec_meetings.ftm.json -o $(FTM_STORE_URI)
+	poetry run ftmq --store-dataset eu_authorities -i ./tests/fixtures/eu_authorities.ftm.json -o $(FTM_STORE_URI)
+	poetry run ftmq --store-dataset gdho -i ./tests/fixtures/gdho.ftm.json -o $(FTM_STORE_URI)
 
 test: install.dev followthemoney.store
 	# pip install types-python-jose
 	# pip install types-passlib
 	# pip install pandas-stubs
-	pytest -s --cov=ftmstore_fastapi --cov-report term-missing
-	# mypy ftmstore_fastapi
+	poetry run pytest -s --cov=ftmstore_fastapi --cov-report term-missing
+
+typecheck:
+	poetry run mypy ftmstore_fastapi
 
 lint:
 	poetry run flake8 ftmstore_fastapi --count --select=E9,F63,F7,F82 --show-source --statistics
