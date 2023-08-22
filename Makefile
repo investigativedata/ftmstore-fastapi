@@ -8,8 +8,8 @@ install:
 	pip install -e .
 
 
-api: testdata  # for development
-	CATALOG=./tests/fixtures/catalog.json DEBUG=1 uvicorn ftmstore_fastapi.api:app --reload
+api: # testdata  # for development
+	CATALOG=./tests/fixtures/catalog.json DEBUG=1 uvicorn ftmstore_fastapi.api:app --reload --port 5000
 
 
 install.dev:

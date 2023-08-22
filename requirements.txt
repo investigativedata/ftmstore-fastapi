@@ -1280,6 +1280,8 @@ pyasn1==0.5.0 ; python_version >= "3.10" and python_version < "3.13" \
 pycodestyle==2.11.0 ; python_version >= "3.10" and python_version < "3.13" \
     --hash=sha256:259bcc17857d8a8b3b4a2327324b79e5f020a13c16074670f9c8c8f872ea76d0 \
     --hash=sha256:5d1013ba8dc7895b548be5afb05740ca82454fd899971563d2ef625d090326f8
+pycountry==22.3.5 ; python_version >= "3.10" and python_version < "3.13" \
+    --hash=sha256:b2163a246c585894d808f18783e19137cb70a0c18fb36748dc01fc6f109c1646
 pycparser==2.21 ; python_version >= "3.10" and python_version < "3.13" \
     --hash=sha256:8ee45429555515e1f6b185e78100aea234072576aa43ab53aefcae078162fca9 \
     --hash=sha256:e644fdec12f7872f86c58ff790da456218b10f863970249516d60a5eaca77206

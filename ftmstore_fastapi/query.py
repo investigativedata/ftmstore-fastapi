@@ -1,5 +1,4 @@
 from collections import defaultdict
-from collections.abc import Generator
 from typing import Any
 
 from fastapi import HTTPException, Request
@@ -8,6 +7,13 @@ from ftmq.query import Query as _Query
 from pydantic import BaseModel, Field, validator
 
 from ftmstore_fastapi import settings
+
+
+class RetrieveParams(BaseModel):
+    nested: bool
+    featured: bool
+    dehydrate: bool
+    dehydrate_nested: bool
 
 
 class AggregationParams(BaseModel):
@@ -37,28 +43,12 @@ class QueryParams(BaseModel):
     value: str | None = Field(None, example="de")
 
     class Config:
-        extra = "allow"
-
-    def __init__(self, **data):
-        data.pop("api_key", None)
-        data = {k: v for k, v in data.items() if k not in AggregationParams.__fields__}
-        super().__init__(**data)
-
-    @classmethod
-    def from_request(
-        cls, request: Request, authenticated: bool | None = False
-    ) -> "QueryParams":
-        params = cls(**request.query_params)
-        if not authenticated and params.limit > settings.DEFAULT_LIMIT:
-            params.limit = settings.DEFAULT_LIMIT
-        return params
+        allow_population_by_field_name = True
 
     @validator("prop")
     def validate_prop(cls, prop: str | None) -> bool:
         if prop is not None:
             if prop == "reverse":
-                return prop
-            if prop.startswith("context."):
                 return prop
             if prop not in Properties:
                 raise HTTPException(400, detail=[f"Invalid ftm property: `{prop}`"])
@@ -70,18 +60,45 @@ class QueryParams(BaseModel):
             raise HTTPException(400, detail=[f"Invalid ftm schema: `{value}`"])
         return value
 
-    def to_lookup_dict(self) -> dict[str, Any]:
-        return {
-            k: v
-            for k, v in self.dict().items()
-            if k not in ("schema_", "order_by", "limit", "page") and v
-        }
+    def to_where_lookup_dict(self) -> dict[str, Any]:
+        return {k: v for k, v in self.dict().items() if v and k not in META_FIELDS}
+
+
+META_FIELDS = (
+    set(AggregationParams.__fields__)
+    | set(RetrieveParams.__fields__)  # noqa: W503
+    | set(QueryParams.__fields__) - {"prop", "value", "operator"}  # noqa: W503
+)
+
+
+class ViewQueryParams(QueryParams):
+    class Config:
+        extra = "allow"
+        allow_population_by_field_name = True
+
+    def __init__(self, **data):
+        data.pop("api_key", None)
+        data = {k: v for k, v in data.items() if k not in AggregationParams.__fields__}
+        super().__init__(**data)
+
+    @classmethod
+    def from_request(
+        cls, request: Request, authenticated: bool | None = False
+    ) -> "ViewQueryParams":
+        params = cls(**request.query_params)
+        if not authenticated and params.limit > settings.DEFAULT_LIMIT:
+            params.limit = settings.DEFAULT_LIMIT
+        return params
 
 
 class Query(_Query):
     @classmethod
-    def from_params(cls: "Query", params: QueryParams) -> "Query":
+    def from_params(
+        cls: "Query", params: ViewQueryParams, dataset: str | None = None
+    ) -> "Query":
         q = cls()[(params.page - 1) * params.limit : params.page * params.limit]
+        if dataset is not None:
+            q = q.where(dataset=dataset)
         if params.order_by:
             ascending = True
             if params.order_by.startswith("-"):
@@ -90,40 +107,9 @@ class Query(_Query):
             q = q.order_by(params.order_by, ascending=ascending)
         if params.schema_:
             q = q.where(schema=params.schema_)
-        q = q.where(**params.to_lookup_dict())
+        q = q.where(**params.to_where_lookup_dict())
 
         return q
-
-    def agg(self, *args) -> None:
-        raise NotImplementedError
-
-
-class AggregationQuery(Query):
-    def __init__(self, *args, aggregations: AggregationParams | None = None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.aggregations = aggregations
-
-    @classmethod
-    def from_params(
-        cls, params: QueryParams, aggregations=AggregationParams
-    ) -> "AggregationQuery":
-        q = super().from_params(params)
-        q.aggregations = aggregations
-        return q
-
-    def get_queries(self) -> Generator[Query, None, None]:
-        if self.aggregations is None:
-            return
-
-        self.limit = None
-        self.offset = None
-        self.order_by = None
-        # FIXME this is not performance efficient as we could group multiple
-        # aggregations for one field together into 1 query
-        aggregations = self.aggregations.inverse()
-        for field, funcs in aggregations.items():
-            for func in funcs:
-                yield self.agg(field, func)
 
 
 class SearchQuery(_Query):

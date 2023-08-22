@@ -4,20 +4,19 @@ from typing import Literal
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-from ftmstore.settings import DATABASE_URI
+from ftmq.settings import DB_STORE_URI
 
-from . import settings, views
-from .logging import get_logger
-from .query import QueryParams
-from .serialize import (
-    AggregationResponse,
-    DataCatalogResponse,
+from ftmstore_fastapi import settings, views
+from ftmstore_fastapi.logging import get_logger
+from ftmstore_fastapi.query import QueryParams
+from ftmstore_fastapi.serialize import (  # AggregationResponse,
+    CatalogResponse,
     DatasetResponse,
     EntitiesResponse,
     EntityResponse,
     ErrorResponse,
 )
-from .store import get_catalog
+from ftmstore_fastapi.store import get_catalog
 
 log = get_logger(__name__)
 
@@ -34,17 +33,17 @@ app.add_middleware(
     allow_methods=["OPTIONS", "GET"],
 )
 
-log.info("Ftm store: %s" % DATABASE_URI)
+log.info("Ftm store: %s" % DB_STORE_URI)
 
 
 @app.get(
     "/catalog",
-    response_model=DataCatalogResponse,
+    response_model=CatalogResponse,
     responses={
         500: {"model": ErrorResponse, "description": "Server error"},
     },
 )
-async def dataset_list(request: Request) -> DataCatalogResponse:
+async def dataset_list(request: Request) -> CatalogResponse:
     """
     Show metadata for catalog (as described in
     [nomenklatura.DataCatalog](https://github.com/opensanctions/nomenklatura))
@@ -114,36 +113,32 @@ async def list_entities(
 
     `/{dataset}/entities?schema=Company?country=de`
 
-    Filtering works for all [FollowTheMoney](https://alephdata.github.io/followthemoney/explorer/)
-    properties as well as for arbitrary extra data stored within the entity
-    dict (referred to as context), example entity:
+    Filtering works for all [FollowTheMoney](https://followthemoney.tech/explorer/)
+    properties
 
     ```json
     {
         "id": "NK-A7z....",
         "schema": "LegalEntity",
         "properties": {
-            "name": [ "John Doe" ]
+            "name": [ "Jane Doe" ]
         },
-        "foo": "bar"
     }
     ```
 
     Could be queried like this:
 
-    `/{dataset}/entities?context.foo=bar`
+    `/{dataset}/entities?name__ilike=%Jane%`
 
     ## sorting
 
     For ftm properties:  `?order_by={prop}` (descending: `/?order_by=-{prop}`)
 
-    [Numeric](https://alephdata.github.io/followthemoney/explorer/types/number/#content)
-    property types are casted via sqlite `CAST(value AS NUMERIC)` (ignoring
+    [Numeric](https://followthemoney.tech/explorer/types/number/)
+    property types are casted via sql `CAST(value AS NUMERIC)` (ignoring
     errors, results in 0) before sorting, and the first property in the value
     array is used as the sorting value. (The entity property dict remains
     uncasted, aka all properties are multi values as string)
-
-    For arbitrary context data: `?order_by=context.foo`
 
     ## searching
 
@@ -190,30 +185,30 @@ async def detail_entity(
     return views.entity_detail(request, dataset, entity_id, retrieve_params)
 
 
-@app.get(
-    "/{dataset}/aggregate",
-    response_model=AggregationResponse,
-    responses={
-        500: {"model": ErrorResponse, "description": "Server error"},
-    },
-)
-async def aggregation(
-    request: Request,
-    dataset: Datasets,
-    q: str = Query(None, title="Search string"),
-    params: QueryParams = Depends(QueryParams),
-    aggregation_params: views.AggregationParams = Depends(views.get_aggregation_params),
-) -> AggregationResponse:
-    """
-    Aggregate property values for given filter criteria (same as entities
-    endpoint + search term)
+# @app.get(
+#     "/{dataset}/aggregate",
+#     response_model=AggregationResponse,
+#     responses={
+#         500: {"model": ErrorResponse, "description": "Server error"},
+#     },
+# )
+# async def aggregation(
+#     request: Request,
+#     dataset: Datasets,
+#     q: str = Query(None, title="Search string"),
+#     params: QueryParams = Depends(QueryParams),
+#     aggregation_params: views.AggregationParams = Depends(views.get_aggregation_params),
+# ) -> AggregationResponse:
+#     """
+#     Aggregate property values for given filter criteria (same as entities
+#     endpoint + search term)
 
-    specify which props / context data should be aggregated like this:
+#     specify which props should be aggregated like this:
 
-        ?aggSum=amount&aggMin=amount
+#         ?aggSum=amount&aggMin=amount
 
-    multiple fields possible:
+#     multiple fields possible:
 
-        ?aggMax=amount&aggMax=date
-    """
-    return views.aggregation(request, dataset, q, aggregation_params)
+#         ?aggMax=amount&aggMax=date
+#     """
+#     return views.aggregation(request, dataset, q, aggregation_params)

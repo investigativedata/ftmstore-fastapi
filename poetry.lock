@@ -1172,6 +1172,7 @@ fsspec = "^2023.6.0"
 gcsfs = "^2023.6.0"
 nomenklatura = {git = "https://github.com/opensanctions/nomenklatura", rev = "feature/sql-store"}
 orjson = "^3.9.1"
+pycountry = "^22.3.5"
 pydantic = "<2"
 PyICU = "^2.11"
 s3fs = "^2023.6.0"
@@ -1182,7 +1183,7 @@ sqlalchemy = "^2.0.19"
 type = "git"
 url = "https://github.com/investigativedata/ftmq"
 reference = "develop"
-resolved_reference = "b759a2fec657c6229b5f6d5b4419d217ef88058f"
+resolved_reference = "83af40389efa6807c8b7a848f7f057a42478bdd4"
 
 [[package]]
 name = "furl"
@@ -2419,7 +2420,7 @@ leveldb = ["plyvel"]
 type = "git"
 url = "https://github.com/opensanctions/nomenklatura"
 reference = "feature/sql-store"
-resolved_reference = "565dc1027ae0e460d8548ddb569ffbe6ea4b9222"
+resolved_reference = "86f288d50b7f532b504263a3928f97e3f4a60bcc"
 
 [[package]]
 name = "normality"
@@ -2872,6 +2873,19 @@ files = [
     {file = "pycodestyle-2.11.0-py2.py3-none-any.whl", hash = "sha256:5d1013ba8dc7895b548be5afb05740ca82454fd899971563d2ef625d090326f8"},
     {file = "pycodestyle-2.11.0.tar.gz", hash = "sha256:259bcc17857d8a8b3b4a2327324b79e5f020a13c16074670f9c8c8f872ea76d0"},
 ]
+
+[[package]]
+name = "pycountry"
+version = "22.3.5"
+description = "ISO country, subdivision, language, currency and script definitions and their translations"
+optional = false
+python-versions = ">=3.6, <4"
+files = [
+    {file = "pycountry-22.3.5.tar.gz", hash = "sha256:b2163a246c585894d808f18783e19137cb70a0c18fb36748dc01fc6f109c1646"},
+]
+
+[package.dependencies]
+setuptools = "*"
 
 [[package]]
 name = "pycparser"

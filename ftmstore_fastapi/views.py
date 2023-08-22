@@ -1,34 +1,29 @@
+from collections.abc import Iterable
 from functools import cache
 
 from fastapi import Query as QueryField
 from fastapi import Request
 from fastapi.responses import RedirectResponse
+from ftmq.model import Dataset
+from ftmq.types import CE
 from furl import furl
-from pydantic import BaseModel
 
-from .cache import cache_view
-from .query import (
+from ftmstore_fastapi.cache import cache_view
+from ftmstore_fastapi.query import (
     AggregationParams,
-    AggregationQuery,
-    ExtraQueryParams,
     Query,
+    RetrieveParams,
     SearchQuery,
+    ViewQueryParams,
 )
-from .serialize import (
-    AggregationResponse,
-    DataCatalogResponse,
+from ftmstore_fastapi.serialize import (  # AggregationResponse,
+    CatalogResponse,
     DatasetResponse,
     EntitiesResponse,
     EntityResponse,
 )
-from .store import get_catalog, get_dataset
-
-
-class RetrieveParams(BaseModel):
-    nested: bool
-    featured: bool
-    dehydrate: bool
-    dehydrate_nested: bool
+from ftmstore_fastapi.store import get_catalog, get_dataset, get_view
+from ftmstore_fastapi.util import get_dehydrated_proxy
 
 
 def get_retrieve_params(
@@ -61,14 +56,22 @@ def get_aggregation_params(
 
 
 @cache
-def dataset_list(request: Request) -> DataCatalogResponse:
+def dataset_list(request: Request) -> CatalogResponse:
     catalog = get_catalog()
-    return DataCatalogResponse.from_catalog(request, catalog)
+    datasets: list[Dataset] = []
+    for dataset in catalog.datasets:
+        view = get_view(dataset.name)
+        dataset.coverage = view.coverage()
+        datasets.append(dataset)
+    catalog.datasets = datasets
+    return CatalogResponse.from_catalog(request, catalog)
 
 
 @cache
 def dataset_detail(request: Request, name: str) -> DatasetResponse:
+    view = get_view(name)
     dataset = get_dataset(name)
+    dataset.coverage = view.coverage()
     return DatasetResponse.from_dataset(request, dataset)
 
 
@@ -80,18 +83,22 @@ def entity_list(
     q: str | None = None,
     authenticated: bool | None = False,
 ) -> EntitiesResponse:
-    dataset = get_dataset(dataset)
-    params = ExtraQueryParams.from_request(request, authenticated)
+    view = get_view(dataset)
+    params = ViewQueryParams.from_request(request, authenticated)
     if q:
-        query = SearchQuery.from_params(dataset.name, params)
+        query = SearchQuery.from_params(params, dataset=dataset)
         query.term = q
     else:
-        query = Query.from_params(dataset.name, params)
+        query = Query.from_params(params, dataset=dataset)
+    adjacents = []
+    entities = [e for e in view.get_entities(query, retrieve_params)]
+    if retrieve_params.nested:
+        adjacents = view.get_adjacents(entities)
     return EntitiesResponse.from_view(
         request=request,
-        entities=dataset.get_entities(query, **retrieve_params.dict()),
-        total=dataset.get_count(query),
-        schemata=dataset.get_schemata_groups(query),
+        entities=entities,
+        adjacents=adjacents,
+        coverage=view.coverage(query),
         authenticated=authenticated,
     )
 
@@ -100,8 +107,13 @@ def entity_list(
 def entity_detail(
     request: Request, dataset: str, entity_id: str, retrieve_params: RetrieveParams
 ) -> EntityResponse | RedirectResponse:
-    dataset = get_dataset(dataset)
-    entity = dataset.get_entity(entity_id, **retrieve_params.dict())
+    view = get_view(dataset)
+    entity = view.get_entity(entity_id, retrieve_params)
+    adjacents: Iterable[CE] = []
+    if retrieve_params.nested:
+        adjacents = [e[1] for e in view.view.get_adjacent(entity)]
+        if retrieve_params.dehydrate_nested:
+            adjacents = [get_dehydrated_proxy(e) for e in adjacents]
     if entity.id != entity_id:  # we have a redirect to a merged entity
         url = furl(request.url)
         url.path.segments[-1] = entity.id
@@ -109,23 +121,24 @@ def entity_detail(
         response.headers["X-Entity-ID"] = entity.id
         response.headers["X-Entity-Schema"] = entity.schema.name
         return response
-    return EntityResponse.from_entity(entity)
+    return EntityResponse.from_entity(entity, adjacents)
 
 
-@cache_view
-def aggregation(
-    request: Request,
-    dataset: str,
-    q: str | None = None,
-    aggregation_params: AggregationParams | None = None,
-) -> AggregationResponse:
-    dataset = get_dataset(dataset)
-    params = ExtraQueryParams.from_request(request)
-    query = AggregationQuery.from_params(dataset.name, params, aggregation_params)
-    if q:
-        query.term = q
-    return AggregationResponse.from_view(
-        request=request,
-        aggregations=dataset.get_aggregations(query),
-        total=dataset.get_count(query),
-    )
+# @cache_view
+# def aggregation(
+#     request: Request,
+#     dataset: str,
+#     q: str | None = None,
+#     aggregation_params: AggregationParams | None = None,
+#     authenticated: bool | None = False,
+# ) -> AggregationResponse:
+#     view = get_view(dataset)
+#     params = ViewQueryParams.from_request(request, authenticated)
+#     query = Query.from_params(params, dataset=dataset)
+#     if q:
+#         query.term = q
+#     return AggregationResponse.from_view(
+#         request=request,
+#         aggregations=view.aggregate(query, None),
+#         coverage=view.coverage(query),
+#     )
