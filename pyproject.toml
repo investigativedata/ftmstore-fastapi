@@ -6,6 +6,20 @@ authors = ["Simon Wörpel <simon.woerpel@pm.me>"]
 license = "GNU"
 readme = "README.md"
 packages = [{include = "ftmstore_fastapi"}]
+homepage = "https://github.com/simonwoerpel/ftmstore_fastapi"
+repository = "https://github.com/simonwoerpel/ftmstore_fastapi"
+documentation = "https://github.com/simonwoerpel/ftmstore_fastapi"
+classifiers = [
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/simonwoerpel/ftmstore_fastapi/issues"
+
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
