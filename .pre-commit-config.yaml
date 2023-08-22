@@ -47,6 +47,7 @@ repos:
       - id: pyproject-flake8
         additional_dependencies: [ flake8-bugbear ]
         args: [ "--extend-ignore", "E203, E501, B008" ]
+        exclude: (test_[\w]+\.py)$
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.5

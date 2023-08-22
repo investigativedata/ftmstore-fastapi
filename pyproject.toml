@@ -31,3 +31,9 @@ mypy = "^1.5.1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+env = [
+    "CATALOG=./tests/fixtures/catalog.json",
+    "DEBUG=1"
+]
