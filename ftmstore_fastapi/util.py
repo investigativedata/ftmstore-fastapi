@@ -1,74 +1,33 @@
-from functools import cache
-from typing import Any
-
-import pycountry
-from followthemoney import model
-from followthemoney.proxy import E
-from nomenklatura.entity import CE, CompositeEntity
+from ftmq.types import CE
+from ftmq.util import make_proxy
 
 
-def uplevel(proxy: E) -> CE:
-    proxy = CompositeEntity.from_dict(model, proxy.to_dict())
-    proxy.context.pop("caption", None)
-    return proxy
-
-
-def get_proxy(data: dict[str, Any]) -> CE:
-    proxy = CompositeEntity.from_dict(model, data)
-    proxy.context.pop("caption", None)
-    return proxy
-
-
-def get_proxy_caption(proxy: CE) -> str:
-    # FIXME
-    if proxy.caption != proxy.schema.label:
-        return proxy.caption
+def get_proxy_caption_property(proxy: CE) -> dict[str, str]:
     for prop in proxy.schema.caption:
         for value in proxy.get(prop):
-            return value
-    return proxy.schema.label
+            return {prop: value}
+    return {}
 
 
-def get_dehydrated_proxy(
-    data: dict[str, Any] | E | CE, include_context: bool = True
-) -> CE:
+def get_dehydrated_proxy(proxy: CE) -> CE:
     """
-    reduce proxy payload to only include 1 name (caption)
-    and optionally context
+    reduce proxy payload to only include caption property
     """
-    proxy = get_proxy(data)
-    caption = get_proxy_caption(proxy)
-    dehydrated = get_proxy(
-        {"id": proxy.id, "schema": proxy.schema.name, "caption": caption}
+    return make_proxy(
+        {
+            "id": proxy.id,
+            "schema": proxy.schema.name,
+            "properties": get_proxy_caption_property(proxy),
+            "datasets": proxy.datasets,
+        }
     )
-    if include_context:
-        dehydrated.datasets = proxy.datasets
-        dehydrated.referents = proxy.referents
-        dehydrated.context = proxy.context
-    return dehydrated
 
 
-def get_featured_proxy(
-    data: dict[str, Any] | E | CE, include_context: bool = True
-) -> CE:
+def get_featured_proxy(proxy: CE) -> CE:
     """
-    reduce proxy payload to only include featured properties and optionally context
+    reduce proxy payload to only include featured properties
     """
-    proxy = get_proxy(data)
-    featured = get_dehydrated_proxy(data)
-    if include_context:
-        featured.datasets = proxy.datasets
-        featured.referents = proxy.referents
-        featured.context = proxy.context
+    featured = get_dehydrated_proxy(proxy)
     for prop in proxy.schema.featured:
         featured.add(prop, proxy.get(prop))
     return featured
-
-
-@cache
-def get_country_name(alpha2: str) -> str:
-    try:
-        country = pycountry.countries.get(alpha_2=alpha2.lower())
-        return country.name
-    except (LookupError, AttributeError):
-        return
