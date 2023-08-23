@@ -48,11 +48,23 @@ def test_api_dataset_entities():
     assert data["items"] == 1
     assert len(data["entities"]) == 1
 
-    res = client.get("/eu_authorities/entities?jurisdiction=eu&order_by=-name")
+    res = client.get(
+        "/eu_authorities/entities?jurisdiction=eu&order_by=-name&dehydrate=true"
+    )
     assert res.status_code == 200
     data = res.json()
     assert data["total"] == 151
     assert data["entities"][0]["id"] == "eu-authorities-cdt"
+    assert "jurisdiction" not in data["entities"][0]["properties"]
+
+    res = client.get(
+        "/eu_authorities/entities?jurisdiction=eu&order_by=-name&featured=true"
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["total"] == 151
+    assert data["entities"][0]["id"] == "eu-authorities-cdt"
+    assert "jurisdiction" not in data["entities"][0]["properties"]
 
     res = client.get("/eu_authorities/entities?jurisdiction__not=eu&order_by=-name")
     assert res.status_code == 200
