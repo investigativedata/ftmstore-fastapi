@@ -448,6 +448,17 @@ urllib3 = ">=1.25.4,<1.27"
 crt = ["awscrt (==0.16.26)"]
 
 [[package]]
+name = "bump2version"
+version = "1.0.1"
+description = "Version-bump your software with a single command!"
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "bump2version-1.0.1-py2.py3-none-any.whl", hash = "sha256:37f927ea17cde7ae2d7baf832f8e80ce3777624554a653006c9144f8017fe410"},
+    {file = "bump2version-1.0.1.tar.gz", hash = "sha256:762cb2bfad61f4ec8e2bdf452c7c267416f8c70dd9ecb1653fd0bbb01fa936e6"},
+]
+
+[[package]]
 name = "cachelib"
 version = "0.10.2"
 description = "A collection of cache libraries in the same API interface."
@@ -1183,7 +1194,7 @@ sqlalchemy = "^2.0.19"
 type = "git"
 url = "https://github.com/investigativedata/ftmq"
 reference = "develop"
-resolved_reference = "83af40389efa6807c8b7a848f7f057a42478bdd4"
+resolved_reference = "0d5421d254a8befd7cec3e71fe3604f3d38f26d3"
 
 [[package]]
 name = "furl"
@@ -2420,7 +2431,7 @@ leveldb = ["plyvel"]
 type = "git"
 url = "https://github.com/opensanctions/nomenklatura"
 reference = "feature/sql-store"
-resolved_reference = "86f288d50b7f532b504263a3928f97e3f4a60bcc"
+resolved_reference = "3d25cb41a466a94325f3ff9f4f6ff1842b718bf4"
 
 [[package]]
 name = "normality"
@@ -4357,4 +4368,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "3736086efb0384a2cd7b5c5ae57a7f6fe4e991150827c59a4d5e748ddc9a100c"
+content-hash = "aa8c8a043f0b390f011c6b1cd85f1312a3f610c41482fb5bc0888129e4c94120"

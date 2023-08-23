@@ -41,6 +41,8 @@ pytest = "^7.4.0"
 pytest-cov = "^4.1.0"
 pytest-env = "^0.8.2"
 mypy = "^1.5.1"
+coverage = "^7.3.0"
+bump2version = "^1.0.1"
 
 [build-system]
 requires = ["poetry-core"]
