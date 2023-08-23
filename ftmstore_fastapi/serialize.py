@@ -4,12 +4,13 @@ https://github.com/opensanctions/yente/
 """
 
 from collections import defaultdict
-from collections.abc import Generator, Iterable
+from collections.abc import Iterable
 from typing import Any, Union
 
 from banal import clean_dict
 from fastapi import Request
 from followthemoney.model import registry
+from ftmq.aggregations import AggregatorResult
 from ftmq.model import Catalog, Coverage, Dataset
 from ftmq.types import CE, CEGenerator
 from furl import furl
@@ -105,6 +106,7 @@ class EntitiesResponse(BaseModel):
 
 class AggregationResponse(BaseModel):
     total: int
+    coverage: Coverage
     query: ViewQueryParams
     url: str
     aggregations: Aggregations
@@ -113,20 +115,28 @@ class AggregationResponse(BaseModel):
     def from_view(
         cls,
         request: Request,
-        aggregations: Generator[tuple[str, str, str], None, None],
-        total: int,
+        coverage: Coverage,
+        aggregations: AggregatorResult,
         authenticated: bool | None = False,
     ) -> "AggregationResponse":
-        aggregations_data = defaultdict(dict)
-        for field, func, value in aggregations:
-            aggregations_data[field][func] = value
         query = ViewQueryParams.from_request(request, authenticated)
         url = furl(request.url)
         query_data = clean_dict(query.dict())
         query_data.pop("schema_", None)
         url.args.update(query_data)
+
+        # FIXME reverse aggregations ?
+        agg_data = defaultdict(dict)
+        for func, agg in aggregations.items():
+            for field, value in agg.items():
+                agg_data[field][func] = value
+
         return cls(
-            total=total, query=query, url=str(url), aggregations=aggregations_data
+            total=coverage.entities,
+            query=query,
+            coverage=coverage,
+            aggregations=agg_data,
+            url=str(url),
         )
 
 

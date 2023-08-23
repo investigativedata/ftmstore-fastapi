@@ -2,8 +2,8 @@ from functools import cache
 from typing import TYPE_CHECKING
 
 from fastapi import HTTPException
-from ftmq.model import Catalog, Coverage, Dataset
-from ftmq.query import Q, Query
+from ftmq.model import Catalog, Dataset
+from ftmq.query import Q
 from ftmq.store import Store
 from ftmq.store import get_store as _get_store
 from ftmq.types import CE, CEGenerator
@@ -49,6 +49,10 @@ class View:
         self.query = store.query()
         self.view = store.default_view()
 
+        self.coverage = self.query.coverage
+        self.aggregations = self.query.aggregations
+        self.get_adjacents = self.query.get_adjacents
+
     def get_entity(self, entity_id: str, params: "RetrieveParams") -> CE | None:
         proxy = self.view.get_entity(entity_id)
         if params.dehydrate:
@@ -64,14 +68,6 @@ class View:
             elif params.featured:
                 proxy = get_featured_proxy(proxy)
             yield proxy
-
-    def get_adjacents(self, *args, **kwargs) -> CEGenerator:
-        return self.query.get_adjacents(*args, **kwargs)
-
-    def coverage(self, query: Q | None = None) -> Coverage:
-        q = query or Query()
-        q = q.where(dataset=self.dataset)
-        return self.query.coverage(q)
 
 
 @cache

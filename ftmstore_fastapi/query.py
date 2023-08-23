@@ -1,7 +1,8 @@
-from collections import defaultdict
 from typing import Any
 
+from banal import clean_dict
 from fastapi import HTTPException, Request
+from ftmq.aggregations import Aggregator
 from ftmq.enums import Properties, Schemata
 from ftmq.query import Query as _Query
 from pydantic import BaseModel, Field, validator
@@ -21,13 +22,6 @@ class AggregationParams(BaseModel):
     aggMin: list[str] | None = []
     aggMax: list[str] | None = []
     aggAvg: list[str] | None = []
-
-    def inverse(self) -> dict[str, set[str]]:
-        aggregations = defaultdict(set)
-        for agg_key, fields in self:
-            for field in fields:
-                aggregations[field].add(agg_key[3:].lower())
-        return aggregations
 
 
 class QueryParams(BaseModel):
@@ -78,7 +72,6 @@ class ViewQueryParams(QueryParams):
 
     def __init__(self, **data):
         data.pop("api_key", None)
-        data = {k: v for k, v in data.items() if k not in AggregationParams.__fields__}
         super().__init__(**data)
 
     @classmethod
@@ -89,6 +82,15 @@ class ViewQueryParams(QueryParams):
         if not authenticated and params.limit > settings.DEFAULT_LIMIT:
             params.limit = settings.DEFAULT_LIMIT
         return params
+
+    def to_aggregator(self) -> Aggregator:
+        data = clean_dict(
+            {
+                k[3:].lower(): getattr(self, k, None)
+                for k in AggregationParams.__fields__
+            }
+        )
+        return Aggregator.from_dict(data)
 
 
 class Query(_Query):
@@ -108,7 +110,8 @@ class Query(_Query):
         if params.schema_:
             q = q.where(schema=params.schema_)
         q = q.where(**params.to_where_lookup_dict())
-
+        aggregator = params.to_aggregator()
+        q.aggregations = aggregator.aggregations
         return q
 
 

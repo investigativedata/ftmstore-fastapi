@@ -9,7 +9,8 @@ from ftmq.settings import DB_STORE_URI
 from ftmstore_fastapi import settings, views
 from ftmstore_fastapi.logging import get_logger
 from ftmstore_fastapi.query import QueryParams
-from ftmstore_fastapi.serialize import (  # AggregationResponse,
+from ftmstore_fastapi.serialize import (
+    AggregationResponse,
     CatalogResponse,
     DatasetResponse,
     EntitiesResponse,
@@ -185,30 +186,31 @@ async def detail_entity(
     return views.entity_detail(request, dataset, entity_id, retrieve_params)
 
 
-# @app.get(
-#     "/{dataset}/aggregate",
-#     response_model=AggregationResponse,
-#     responses={
-#         500: {"model": ErrorResponse, "description": "Server error"},
-#     },
-# )
-# async def aggregation(
-#     request: Request,
-#     dataset: Datasets,
-#     q: str = Query(None, title="Search string"),
-#     params: QueryParams = Depends(QueryParams),
-#     aggregation_params: views.AggregationParams = Depends(views.get_aggregation_params),
-# ) -> AggregationResponse:
-#     """
-#     Aggregate property values for given filter criteria (same as entities
-#     endpoint + search term)
+@app.get(
+    "/{dataset}/aggregate",
+    response_model=AggregationResponse,
+    responses={
+        500: {"model": ErrorResponse, "description": "Server error"},
+    },
+)
+async def aggregation(
+    request: Request,
+    dataset: Datasets,
+    q: str = Query(None, title="Search string"),
+    params: QueryParams = Depends(QueryParams),
+    aggregation_params: views.AggregationParams = Depends(views.get_aggregation_params),
+    authenticated: bool = Depends(get_authenticated),
+) -> AggregationResponse:
+    """
+    Aggregate property values for given filter criteria (same as entities
+    endpoint + search term)
 
-#     specify which props should be aggregated like this:
+    specify which props should be aggregated like this:
 
-#         ?aggSum=amount&aggMin=amount
+        ?aggSum=amount&aggMin=amount
 
-#     multiple fields possible:
+    multiple fields possible:
 
-#         ?aggMax=amount&aggMax=date
-#     """
-#     return views.aggregation(request, dataset, q, aggregation_params)
+        ?aggMax=amount&aggMax=date
+    """
+    return views.aggregation(request, dataset, q)

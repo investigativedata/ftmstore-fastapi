@@ -16,7 +16,8 @@ from ftmstore_fastapi.query import (
     SearchQuery,
     ViewQueryParams,
 )
-from ftmstore_fastapi.serialize import (  # AggregationResponse,
+from ftmstore_fastapi.serialize import (
+    AggregationResponse,
     CatalogResponse,
     DatasetResponse,
     EntitiesResponse,
@@ -124,21 +125,19 @@ def entity_detail(
     return EntityResponse.from_entity(entity, adjacents)
 
 
-# @cache_view
-# def aggregation(
-#     request: Request,
-#     dataset: str,
-#     q: str | None = None,
-#     aggregation_params: AggregationParams | None = None,
-#     authenticated: bool | None = False,
-# ) -> AggregationResponse:
-#     view = get_view(dataset)
-#     params = ViewQueryParams.from_request(request, authenticated)
-#     query = Query.from_params(params, dataset=dataset)
-#     if q:
-#         query.term = q
-#     return AggregationResponse.from_view(
-#         request=request,
-#         aggregations=view.aggregate(query, None),
-#         coverage=view.coverage(query),
-#     )
+@cache_view
+def aggregation(
+    request: Request,
+    dataset: str,
+    q: str | None = None,
+) -> AggregationResponse:
+    view = get_view(dataset)
+    params = ViewQueryParams.from_request(request)
+    query = Query.from_params(params, dataset=dataset)
+    if q:
+        query.term = q
+    return AggregationResponse.from_view(
+        request=request,
+        aggregations=view.aggregations(query),
+        coverage=view.coverage(query),
+    )

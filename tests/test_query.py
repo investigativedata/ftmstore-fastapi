@@ -20,8 +20,7 @@ def test_query():
         "limit": 100,
         "offset": 0,
         "schema": "Event",
-        "prop": "date",
-        "value": "2023",
+        "date": "2023",
     }
 
     params = ViewQueryParams(
@@ -32,8 +31,7 @@ def test_query():
         "limit": 10,
         "offset": 10,
         "schema": "Event",
-        "prop": "date",
-        "value": "2023",
+        "date": "2023",
         "order_by": ["location"],
     }
 
@@ -45,8 +43,7 @@ def test_query():
         "limit": 10,
         "offset": 10,
         "schema": "Event",
-        "prop": "date",
-        "value": {"gte": "2023"},
+        "date": {"gte": "2023"},
         "order_by": ["-location"],
     }
 
