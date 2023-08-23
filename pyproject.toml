@@ -30,6 +30,7 @@ redis = "^5.0.0"
 pyicu = "^2.11"
 ftmq = {git = "https://github.com/investigativedata/ftmq", rev = "develop"}
 structlog = "^23.1.0"
+fakeredis = "^2.18.0"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.1.0"
@@ -51,5 +52,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 env = [
     "CATALOG=./tests/fixtures/catalog.json",
-    "DEBUG=1"
+    "DEBUG=1",
+    "CACHE=1"
 ]
