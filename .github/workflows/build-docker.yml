@@ -18,7 +18,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/simonwoerpel/ftmstore-fastapi
+          images: ghcr.io/investigativedata/ftmstore-fastapi
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
