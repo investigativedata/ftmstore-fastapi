@@ -30,7 +30,7 @@ redis = "^5.0.0"
 pyicu = "^2.11"
 ftmq = {git = "https://github.com/investigativedata/ftmq", rev = "develop"}
 structlog = "^23.1.0"
-fakeredis = "^2.18.0"
+fakeredis = "^2.18.1"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.1.0"
