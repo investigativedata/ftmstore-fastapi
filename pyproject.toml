@@ -34,7 +34,7 @@ fakeredis = "^2.18.0"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.1.0"
-black = "^23.7.0"
+black = "^23.9.1"
 pre-commit = "^3.3.3"
 ipdb = "^0.13.13"
 isort = "^5.12.0"
