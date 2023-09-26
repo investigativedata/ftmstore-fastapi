@@ -10,6 +10,18 @@ def test_query():
     q = Query.from_params(params)
     assert q.to_dict() == {"limit": 100, "offset": 0}
 
+    params = ViewQueryParams(dataset=["gdho"])
+    q = Query.from_params(params)
+    assert q.to_dict() == {"limit": 100, "offset": 0, "dataset__in": {"gdho"}}
+
+    params = ViewQueryParams(dataset=["gdho", "ec_meetings"])
+    q = Query.from_params(params)
+    assert q.to_dict() == {
+        "limit": 100,
+        "offset": 0,
+        "dataset__in": {"ec_meetings", "gdho"},
+    }
+
     params = ViewQueryParams(schema="Event")
     q = Query.from_params(params)
     assert q.to_dict() == {"limit": 100, "offset": 0, "schema": "Event"}
@@ -43,7 +55,7 @@ def test_query():
         "limit": 10,
         "offset": 10,
         "schema": "Event",
-        "date": {"gte": "2023"},
+        "date__gte": "2023",
         "order_by": ["-location"],
     }
 

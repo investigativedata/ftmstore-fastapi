@@ -1,5 +1,5 @@
 from functools import cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from fastapi import HTTPException
 from ftmq.model import Catalog, Dataset
@@ -36,14 +36,18 @@ def get_dataset(name: str, catalog: Catalog | None = None) -> Dataset:
 
 
 @cache
-def get_store(dataset: str, catalog_uri: str | None = None) -> Store:
+def get_store(dataset: str | None = None, catalog_uri: str | None = None) -> Store:
     catalog = get_catalog(catalog_uri)
-    dataset = get_dataset(dataset, catalog)
-    return _get_store(catalog=catalog, dataset=dataset, uri=STORE_URI)
+    if dataset is not None:
+        dataset = get_dataset(dataset, catalog)
+        return _get_store(catalog=catalog, dataset=dataset, uri=STORE_URI)
+    return _get_store(catalog=catalog, uri=STORE_URI)
 
 
 class View:
-    def __init__(self, dataset: str, catalog_uri: str | None = None) -> None:
+    def __init__(
+        self, dataset: str | None = None, catalog_uri: str | None = None
+    ) -> None:
         store = get_store(dataset, catalog_uri)
         self.dataset = dataset
         self.query = store.query()
@@ -71,5 +75,10 @@ class View:
 
 
 @cache
-def get_view(dataset: str) -> View:
-    return View(dataset)
+def get_view(dataset: str | None = None, catalog_uri: str | None = None) -> View:
+    return View(dataset, catalog_uri)
+
+
+# cache at boot time
+catalog = get_catalog()
+Datasets = Literal[tuple(catalog.names)]

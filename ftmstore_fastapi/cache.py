@@ -28,7 +28,7 @@ class Cache:
             else:
                 con = redis.from_url(settings.REDIS_URL)
                 con.ping()
-                log.info("Redis connected: `{settings.REDIS_URL}`")
+                log.info(f"Redis connected: `{settings.REDIS_URL}`")
             self.cache = con
         else:
             self.cache = None

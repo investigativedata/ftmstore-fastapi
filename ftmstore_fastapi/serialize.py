@@ -86,7 +86,7 @@ class EntitiesResponse(BaseModel):
         query_data = clean_dict(query.dict())
         query_data.pop("schema_", None)
         url.args.update(query_data)
-        entities = [EntityResponse.from_entity(e) for e in entities]
+        entities = [EntityResponse.from_entity(e, adjacents) for e in entities]
         response = cls(
             total=coverage.entities,
             items=len(entities),
@@ -147,7 +147,7 @@ class DatasetResponse(Dataset):
     def from_dataset(cls, request: Request, dataset: Dataset) -> "DatasetResponse":
         return cls(
             **dataset.dict(),
-            entities_url=f"{request.base_url}{dataset.name}/entities",
+            entities_url=f"{request.base_url}entities?dataset={dataset.name}",
         )
 
 

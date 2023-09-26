@@ -1,5 +1,4 @@
 import secrets
-from typing import Literal
 
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,7 +16,7 @@ from ftmstore_fastapi.serialize import (
     EntityResponse,
     ErrorResponse,
 )
-from ftmstore_fastapi.store import get_catalog
+from ftmstore_fastapi.store import Datasets
 
 log = get_logger(__name__)
 
@@ -54,13 +53,8 @@ async def dataset_list(request: Request) -> CatalogResponse:
     return views.dataset_list(request)
 
 
-# cache at boot time
-catalog = get_catalog()
-Datasets = Literal[tuple(catalog.names)]
-
-
 @app.get(
-    "/{dataset}",
+    "/catalog/{dataset}",
     response_model=DatasetResponse,
     responses={
         500: {"model": ErrorResponse, "description": "Server error"},
@@ -86,15 +80,14 @@ def get_authenticated(
 
 
 @app.get(
-    "/{dataset}/entities",
+    "/entities",
     response_model=EntitiesResponse,
     responses={
         500: {"model": ErrorResponse, "description": "Server error"},
     },
 )
-async def list_entities(
+async def entities(
     request: Request,
-    dataset: Datasets,
     q: str = Query(None, title="Search string"),
     params: QueryParams = Depends(QueryParams),
     retrieve_params: views.RetrieveParams = Depends(views.get_retrieve_params),
@@ -110,9 +103,15 @@ async def list_entities(
     returned. This is e.g. useful for static site builders to reduce the data
     amount.
 
-    ## filter
+    ## dataset scope
 
-    `/{dataset}/entities?schema=Company?country=de`
+    Limit entities filter to one or more datasets from the catalog:
+
+    `/entities?dataset=my_dataset&dataset=another_dataset`
+
+    ## filter by schema and properties
+
+    `/entities?schema=Company?country=de`
 
     Filtering works for all [FollowTheMoney](https://followthemoney.tech/explorer/)
     properties
@@ -129,7 +128,7 @@ async def list_entities(
 
     Could be queried like this:
 
-    `/{dataset}/entities?name__ilike=%Jane%`
+    `/entities?name__ilike=%Jane%`
 
     ## sorting
 
@@ -143,13 +142,12 @@ async def list_entities(
 
     ## searching
 
-    Search entities in the [FTS5-Index](https://www.sqlite.org/fts5.html)
+    Search entities via the configured search backend.
 
     Use optional `q` parameter for a search term.
     """
     return views.entity_list(
         request,
-        dataset,
         retrieve_params,
         q=q,
         authenticated=authenticated,
@@ -157,7 +155,7 @@ async def list_entities(
 
 
 @app.get(
-    "/{dataset}/entities/{entity_id}",
+    "/entities/{entity_id}",
     response_model=EntityResponse,
     responses={
         307: {"description": "The entity was merged into another ID"},
@@ -167,7 +165,6 @@ async def list_entities(
 )
 async def detail_entity(
     request: Request,
-    dataset: Datasets,
     entity_id: str,
     retrieve_params: views.RetrieveParams = Depends(views.get_retrieve_params),
 ) -> EntityResponse | RedirectResponse | ErrorResponse:
@@ -183,11 +180,11 @@ async def detail_entity(
         `x-entity-id` - the new entity id
         `x-entity-schema` - the new entity schema
     """
-    return views.entity_detail(request, dataset, entity_id, retrieve_params)
+    return views.entity_detail(request, entity_id, retrieve_params)
 
 
 @app.get(
-    "/{dataset}/aggregate",
+    "/aggregate",
     response_model=AggregationResponse,
     responses={
         500: {"model": ErrorResponse, "description": "Server error"},
@@ -195,7 +192,6 @@ async def detail_entity(
 )
 async def aggregation(
     request: Request,
-    dataset: Datasets,
     q: str = Query(None, title="Search string"),
     params: QueryParams = Depends(QueryParams),
     aggregation_params: views.AggregationParams = Depends(views.get_aggregation_params),
@@ -213,4 +209,4 @@ async def aggregation(
 
         ?aggMax=amount&aggMax=date
     """
-    return views.aggregation(request, dataset, q)
+    return views.aggregation(request, q)
