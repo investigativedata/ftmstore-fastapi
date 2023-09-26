@@ -113,44 +113,6 @@ def test_api_dataset_entity_detail():
     }
 
 
-# def test_api_search(self):
-#     res = self.client.get("/eu_authorities/entities?q=germany&dehydrate=1")
-#     res = res.json()
-#     self.assertEqual(res["items"], 1)
-# self.assertDictEqual(
-#     res,
-#     {
-#         "total": 1,
-#         "items": 1,
-#         "query": {
-#             "limit": 100,
-#             "page": 1,
-#             "schema": None,
-#             "order_by": None,
-#             "prop": None,
-#             "value": None,
-#         },
-#         "url": "http://testserver/eu_authorities/search?q=germany&dehydrate=true&limit=100&page=1",
-#         "next_url": None,
-#         "prev_url": None,
-#         "entities": [
-#             {
-#                 "id": "eu-authorities-permanent-representation-of-germany-to-the-eu",
-#                 "caption": "Permanent Representation of Germany to the EU",
-#                 "schema": "PublicBody",
-#                 "properties": {
-#                     "name": ["Permanent Representation of Germany to the EU"],
-#                     "legalForm": ["not_1049", "permanent_representative"],
-#                 },
-#                 "datasets": ["eu_authorities"],
-#                 "referents": [],
-#                 "context": {"referents": [], "datasets": ["eu_authorities"]},
-#             }
-#         ],
-#     },
-# )
-
-
 def test_api_reversed():
     res = client.get(
         "/entities?dataset=ec_meetings&reverse=addr-041ab56007250cb6752559152411948269a968bd"
@@ -176,13 +138,12 @@ def test_api_aggregation():
     assert data == {
         "total": 34975,
         "query": {
+            "q": None,
             "limit": 100,
             "page": 1,
             "dataset": ["ec_meetings"],
             "schema": "Event",
             "order_by": None,
-            "prop": None,
-            "value": None,
             "reverse": None,
             "aggMax": "date",
             "aggMin": "date",
@@ -190,3 +151,36 @@ def test_api_aggregation():
         "url": "http://testserver/aggregate?dataset=ec_meetings&schema=Event&aggMin=date&aggMax=date&limit=100&page=1",
         "aggregations": {"date": {"min": "2014-11-12", "max": "2023-01-20"}},
     }
+
+
+def test_api_search():
+    res = client.get("/entities?dataset=eu_authorities&q=agency")
+    data = res.json()
+    assert data["total"] == 151
+    assert data["items"] == 23
+    tested = False
+    for proxy in data["entities"]:
+        assert "agency" in proxy["caption"].lower()
+        tested = True
+    assert tested
+
+    res = client.get("/entities?q=berlin")
+    data = res.json()
+    assert data["total"] == 49822
+    assert data["items"] == 31
+
+    res = client.get("/entities?q=germany&dehydrate=1&dataset=eu_authorities")
+    res = res.json()
+    assert res["items"] == 1
+    assert res["entities"] == [
+        {
+            "id": "eu-authorities-permanent-representation-of-germany-to-the-eu",
+            "caption": "Permanent Representation of Germany to the EU",
+            "schema": "PublicBody",
+            "properties": {
+                "name": ["Permanent Representation of Germany to the EU"],
+            },
+            "datasets": ["eu_authorities"],
+            "referents": [],
+        }
+    ]

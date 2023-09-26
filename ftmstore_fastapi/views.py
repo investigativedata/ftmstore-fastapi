@@ -12,7 +12,6 @@ from ftmstore_fastapi.query import (
     AggregationParams,
     Query,
     RetrieveParams,
-    SearchQuery,
     ViewQueryParams,
 )
 from ftmstore_fastapi.serialize import (
@@ -79,16 +78,11 @@ def dataset_detail(request: Request, name: str) -> DatasetResponse:
 def entity_list(
     request: Request,
     retrieve_params: RetrieveParams,
-    q: str | None = None,
     authenticated: bool | None = False,
 ) -> EntitiesResponse:
     view = get_view()
     params = ViewQueryParams.from_request(request, authenticated)
-    if q:
-        query = SearchQuery.from_params(params)
-        query.term = q
-    else:
-        query = Query.from_params(params)
+    query = Query.from_params(params)
     adjacents = []
     entities = [e for e in view.get_entities(query, retrieve_params)]
     if retrieve_params.nested:
@@ -126,15 +120,10 @@ def entity_detail(
 
 
 @cache_view
-def aggregation(
-    request: Request,
-    q: str | None = None,
-) -> AggregationResponse:
+def aggregation(request: Request) -> AggregationResponse:
     view = get_view()
     params = ViewQueryParams.from_request(request)
     query = Query.from_params(params)
-    if q:
-        query.term = q
     return AggregationResponse.from_view(
         request=request,
         aggregations=view.aggregations(query),

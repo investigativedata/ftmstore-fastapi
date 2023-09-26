@@ -1,5 +1,4 @@
 import pytest
-from fastapi import HTTPException
 from pydantic import ValidationError
 
 from ftmstore_fastapi.query import Query, ViewQueryParams
@@ -59,8 +58,6 @@ def test_query():
         "order_by": ["-location"],
     }
 
-    # invalid lookups
+    # invalid schema lookups
     with pytest.raises(ValidationError):
         ViewQueryParams(schema="foo")
-    with pytest.raises(HTTPException):
-        ViewQueryParams(prop="foo")

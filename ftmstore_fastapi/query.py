@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from fastapi import Query as FastQuery
 from fastapi import Request
 from ftmq.aggregations import Aggregator
-from ftmq.enums import Properties, Schemata
+from ftmq.enums import Schemata
 from ftmq.query import Query as _Query
 from pydantic import BaseModel, Field, validator
 
@@ -28,7 +28,13 @@ class AggregationParams(BaseModel):
 
 
 class QueryParams(BaseModel):
-    dataset: Annotated[list[Datasets] | None, FastQuery()] = []
+    q: Annotated[
+        str | None, FastQuery(description="Optional search query for fuzzy search")
+    ] = None
+    dataset: Annotated[
+        list[Datasets] | None,
+        FastQuery(description="One or more dataset names to limit scope to"),
+    ] = []
     limit: int | None = settings.DEFAULT_LIMIT
     page: int | None = 1
     schema_: Schemata | None = Field(
@@ -37,19 +43,10 @@ class QueryParams(BaseModel):
         alias="schema",
     )
     order_by: str | None = Field(None, example="-date")
-    prop: str | None = Field(None, example="country")
-    value: str | None = Field(None, example="de")
     reverse: str | None = Field(None, example="eu-id-1234")
 
     class Config:
         allow_population_by_field_name = True
-
-    @validator("prop")
-    def validate_prop(cls, prop: str | None) -> bool:
-        if prop is not None:
-            if prop not in Properties:
-                raise HTTPException(400, detail=[f"Invalid ftm property: `{prop}`"])
-        return prop
 
     @validator("schema_")
     def validate_schema(cls, value: str | None) -> bool:
@@ -64,7 +61,7 @@ class QueryParams(BaseModel):
 META_FIELDS = (
     set(AggregationParams.__fields__)
     | set(RetrieveParams.__fields__)  # noqa: W503
-    | set(QueryParams.__fields__) - {"prop", "value", "operator"}  # noqa: W503
+    | set(QueryParams.__fields__)  # noqa: W503
 )
 
 
@@ -115,10 +112,8 @@ class Query(_Query):
         if params.reverse:
             q = q.where(reverse=params.reverse)
         q = q.where(**params.to_where_lookup_dict())
+        if params.q:
+            q = q.search(params.q)
         aggregator = params.to_aggregator()
         q.aggregations = aggregator.aggregations
         return q
-
-
-class SearchQuery(_Query):
-    pass

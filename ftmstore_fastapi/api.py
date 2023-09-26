@@ -3,7 +3,6 @@ import secrets
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-from ftmq.settings import DB_STORE_URI
 
 from ftmstore_fastapi import settings, views
 from ftmstore_fastapi.logging import get_logger
@@ -16,6 +15,7 @@ from ftmstore_fastapi.serialize import (
     EntityResponse,
     ErrorResponse,
 )
+from ftmstore_fastapi.settings import STORE_URI
 from ftmstore_fastapi.store import Datasets
 
 log = get_logger(__name__)
@@ -33,7 +33,7 @@ app.add_middleware(
     allow_methods=["OPTIONS", "GET"],
 )
 
-log.info("Ftm store: %s" % DB_STORE_URI)
+log.info("Ftm store: %s" % STORE_URI)
 
 
 @app.get(
@@ -88,7 +88,6 @@ def get_authenticated(
 )
 async def entities(
     request: Request,
-    q: str = Query(None, title="Search string"),
     params: QueryParams = Depends(QueryParams),
     retrieve_params: views.RetrieveParams = Depends(views.get_retrieve_params),
     authenticated: bool = Depends(get_authenticated),
@@ -146,12 +145,7 @@ async def entities(
 
     Use optional `q` parameter for a search term.
     """
-    return views.entity_list(
-        request,
-        retrieve_params,
-        q=q,
-        authenticated=authenticated,
-    )
+    return views.entity_list(request, retrieve_params, authenticated=authenticated)
 
 
 @app.get(
@@ -192,7 +186,6 @@ async def detail_entity(
 )
 async def aggregation(
     request: Request,
-    q: str = Query(None, title="Search string"),
     params: QueryParams = Depends(QueryParams),
     aggregation_params: views.AggregationParams = Depends(views.get_aggregation_params),
     authenticated: bool = Depends(get_authenticated),
@@ -209,4 +202,4 @@ async def aggregation(
 
         ?aggMax=amount&aggMax=date
     """
-    return views.aggregation(request, q)
+    return views.aggregation(request)
