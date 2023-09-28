@@ -2,14 +2,15 @@ from collections import Counter
 from functools import cache
 from typing import Any
 
+import fakeredis
 import redis
 from cachelib.serializers import RedisSerializer
 from fastapi import Request
 from followthemoney.util import make_entity_id
 from normality import slugify
 
-from . import settings
-from .logging import get_logger
+from ftmstore_fastapi import settings
+from ftmstore_fastapi.logging import get_logger
 
 log = get_logger(__name__)
 
@@ -18,14 +19,19 @@ PREFIX = f"ftmstore_fastapi:{settings.VERSION}:{slugify(settings.TITLE)}"
 
 class Cache:
     def __init__(self):
+        self.stats = Counter()
         if settings.CACHE:
-            con = redis.from_url(settings.REDIS_URL)
-            con.ping()
+            if settings.DEBUG:
+                con = fakeredis.FakeStrictRedis()
+                con.ping()
+                log.info("Redis connected: `fakeredis`")
+            else:
+                con = redis.from_url(settings.REDIS_URL)
+                con.ping()
+                log.info(f"Redis connected: `{settings.REDIS_URL}`")
             self.cache = con
         else:
             self.cache = None
-
-        self.stats = Counter()
 
     def set(self, key: str, data: Any):
         if self.cache is not None:

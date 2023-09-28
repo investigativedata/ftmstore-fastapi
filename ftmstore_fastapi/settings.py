@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 from banal import as_bool
+from nomenklatura.settings import DB_URL
 
 from ftmstore_fastapi import __version__
 
@@ -10,6 +11,8 @@ VERSION = __version__
 CATALOG = os.environ.get("CATALOG")
 if CATALOG is not None:
     CATALOG = Path(CATALOG)
+
+FTM_STORE_URI = os.environ.get("FTM_STORE_URI", DB_URL)
 
 DATASETS = os.environ.get("EXPOSE_DATASETS", "*")  # all by default
 DATASETS_STATS = as_bool(os.environ.get("DATASETS_STATS", 1))
@@ -24,7 +27,6 @@ CACHE_TIMEOUT = int(os.environ.get("CACHE_TIMEOUT", 0))
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
 DEFAULT_LIMIT = 100
 LOG_JSON = as_bool(os.environ.get("LOG_JSON", 0))
-IN_MEMORY = as_bool(os.environ.get("SQLITE_IN_MEMORY", 1))
 INDEX_PROPERTIES = os.environ.get("INDEX_PROPERTIES", "").split(",")
 
 # Api documentation render
@@ -42,12 +44,10 @@ This api exposes a
 read-only endpoint that allows granular data fetching and searching.
 
 * [Available datasets in this api instance](/catalog)
-* [More about the FollowTheMoney model](https://alephdata.github.io/followthemoney/)
+* [More about the FollowTheMoney model](https://followthemoney.tech/explorer/)
 
-This is suited for mid-scale entities collections that fit into an in-memory
-sqlite database that is loaded on boot time feeded from the source database via
-`FTM_STORE_URI`. For production use, a simple cache based on redis is
-available.
+This api works for all store implementations found in
+[`nomenklatura.store`](https://github.com/opensanctions/nomenklatura/tree/main/nomenklatura/store)
 
 There are four main api endpoints:
 
@@ -57,8 +57,7 @@ There are four main api endpoints:
   pagination: `/{dataset}/entities?{params}`
 * Search for entities (by their name property types) via
   [Sqlite FTS](https://www.sqlite.org/fts5.html): `/{dataset}/search?q=<search term>`
-* Aggregate (on SQL level) `sum`, `avg`, `max`, `min` for ftm properties and
-  arbitrary extra data (see below)
+* Aggregate (on store backend level) `sum`, `avg`, `max`, `min` for ftm properties
 
 Two more endpoints for catalog / dataset metadata:
 

@@ -3,7 +3,7 @@
 Expose a [followthemoney-store](https://github.com/alephdata/followthemoney-store)
 to a readonly [FastAPI](https://fastapi.tiangolo.com/)
 
-An example instance is deployed here: https://api.investigraph.ftm.store
+An example instance is deployed here: https://api.investigraph.dev
 
 The api features filtering for entity `Schema` and `Property` values, sorting
 and a search endpoint to query against a [sqlite full-text index](https://www.sqlite.org/fts5.html)
@@ -45,24 +45,22 @@ amount.
 
 `/{dataset}/entities?schema=Company?country=de`
 
-Filtering works for all [FollowTheMoney](https://alephdata.github.io/followthemoney/explorer/)
-properties as well as for arbitrary extra data stored within the entity
-dict (referred to as context), example entity:
+Filtering works for all [FollowTheMoney](https://followthemoney.tech/explorer/)
+properties
 
 ```json
 {
     "id": "NK-A7z....",
     "schema": "LegalEntity",
     "properties": {
-        "name": [ "John Doe" ]
-    },
-    "foo": "bar"
+        "name": [ "Jane Doe" ]
+    }
 }
 ```
 
 Could be queried like this:
 
-`/{dataset}/entities?context.foo=bar`
+`/{dataset}/entities?name__ilike=%jane%`
 
 #### sorting
 
@@ -73,8 +71,6 @@ property types are casted via sqlite `CAST(value AS NUMERIC)` (ignoring
 errors, results in 0) before sorting, and the first property in the value
 array is used as the sorting value. (The entity property dict remains
 uncasted, aka all properties are multi values as string)
-
-For arbitrary context data: `?order_by=context.foo`
 
 #### searching
 
@@ -152,9 +148,21 @@ To even improve performance, api responses can be cached in [redis](https://redi
 
 See the example `docker-compose.yml`
 
-## developement
+## development
 
-    pip install -e .
+This package is using [poetry](https://python-poetry.org/) for packaging and dependencies management, so first [install it](https://python-poetry.org/docs/#installation).
+
+Clone the repository to a local destination.
+
+Within the root directory, run
+
+    poetry install --with dev
+
+This installs a few development dependencies, including [pre-commit](https://pre-commit.com/) which needs to be registered:
+
+    poetry run pre-commit install
+
+Before creating a commit, this checks for correct code formatting (isort, black) and some other useful stuff (see: `.pre-commit-config.yaml`)
 
 Spin up dev server and populate with fixtures data:
 
@@ -163,6 +171,7 @@ Spin up dev server and populate with fixtures data:
 Run test & typing:
 
     make test
+    make typecheck
 
 ## supported by
 
@@ -172,6 +181,3 @@ Since March 2023, developing of this project is supported by
 <a href="https://www.media-lab.de/en/programs/media-tech-lab">
     <img src="https://raw.githubusercontent.com/media-tech-lab/.github/main/assets/mtl-powered-by.png" width="240" title="Media Tech Lab powered by logo">
 </a>
-
-
-

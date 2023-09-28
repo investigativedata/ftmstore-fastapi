@@ -1,19 +1,21 @@
 services:
   api:
-    # use 1 worker per service, scale api services instead of gunicorn workers!
     build: .
+    command: "--workers 4"
     restart: unless-stopped
     ports:
       - 127.0.0.1:8000:8000
     links:
       - redis
     environment:
+      CATALOG_URI: /data/catalog.json
       FTM_STORE_URI: sqlite:////data/followthemoney.store
       REDIS_URL: redis://redis
       CACHE: 1
       PRELOAD_DATASETS: 1
     volumes:
       - ${DATA_ROOT:-.}/followthemoney.store:/data/followthemoney.store
+      - ${DATA_ROOT:-.}/tests/fixtures/catalog.json:/data/catalog.json
 
   redis:
     image: redis
