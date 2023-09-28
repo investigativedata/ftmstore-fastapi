@@ -1,13 +1,16 @@
-from typing import Any
+from typing import Annotated, Any
 
 from banal import clean_dict
-from fastapi import HTTPException, Request
+from fastapi import HTTPException
+from fastapi import Query as FastQuery
+from fastapi import Request
 from ftmq.aggregations import Aggregator
-from ftmq.enums import Properties, Schemata
+from ftmq.enums import Schemata
 from ftmq.query import Query as _Query
 from pydantic import BaseModel, Field, validator
 
 from ftmstore_fastapi import settings
+from ftmstore_fastapi.store import Datasets
 
 
 class RetrieveParams(BaseModel):
@@ -25,6 +28,13 @@ class AggregationParams(BaseModel):
 
 
 class QueryParams(BaseModel):
+    q: Annotated[
+        str | None, FastQuery(description="Optional search query for fuzzy search")
+    ] = None
+    dataset: Annotated[
+        list[Datasets] | None,
+        FastQuery(description="One or more dataset names to limit scope to"),
+    ] = []
     limit: int | None = settings.DEFAULT_LIMIT
     page: int | None = 1
     schema_: Schemata | None = Field(
@@ -33,20 +43,10 @@ class QueryParams(BaseModel):
         alias="schema",
     )
     order_by: str | None = Field(None, example="-date")
-    prop: str | None = Field(None, example="country")
-    value: str | None = Field(None, example="de")
+    reverse: str | None = Field(None, example="eu-id-1234")
 
     class Config:
         allow_population_by_field_name = True
-
-    @validator("prop")
-    def validate_prop(cls, prop: str | None) -> bool:
-        if prop is not None:
-            if prop == "reverse":
-                return prop
-            if prop not in Properties:
-                raise HTTPException(400, detail=[f"Invalid ftm property: `{prop}`"])
-        return prop
 
     @validator("schema_")
     def validate_schema(cls, value: str | None) -> bool:
@@ -61,7 +61,7 @@ class QueryParams(BaseModel):
 META_FIELDS = (
     set(AggregationParams.__fields__)
     | set(RetrieveParams.__fields__)  # noqa: W503
-    | set(QueryParams.__fields__) - {"prop", "value", "operator"}  # noqa: W503
+    | set(QueryParams.__fields__)  # noqa: W503
 )
 
 
@@ -78,7 +78,9 @@ class ViewQueryParams(QueryParams):
     def from_request(
         cls, request: Request, authenticated: bool | None = False
     ) -> "ViewQueryParams":
-        params = cls(**request.query_params)
+        params = dict(request.query_params)
+        params["dataset"] = request.query_params.getlist("dataset")
+        params = cls(**params)
         if not authenticated and params.limit > settings.DEFAULT_LIMIT:
             params.limit = settings.DEFAULT_LIMIT
         return params
@@ -95,12 +97,10 @@ class ViewQueryParams(QueryParams):
 
 class Query(_Query):
     @classmethod
-    def from_params(
-        cls: "Query", params: ViewQueryParams, dataset: str | None = None
-    ) -> "Query":
+    def from_params(cls: "Query", params: ViewQueryParams) -> "Query":
         q = cls()[(params.page - 1) * params.limit : params.page * params.limit]
-        if dataset is not None:
-            q = q.where(dataset=dataset)
+        if params.dataset:
+            q = q.where(dataset__in=params.dataset)
         if params.order_by:
             ascending = True
             if params.order_by.startswith("-"):
@@ -109,11 +109,11 @@ class Query(_Query):
             q = q.order_by(params.order_by, ascending=ascending)
         if params.schema_:
             q = q.where(schema=params.schema_)
+        if params.reverse:
+            q = q.where(reverse=params.reverse)
         q = q.where(**params.to_where_lookup_dict())
+        if params.q:
+            q = q.search(params.q)
         aggregator = params.to_aggregator()
         q.aggregations = aggregator.aggregations
         return q
-
-
-class SearchQuery(_Query):
-    pass

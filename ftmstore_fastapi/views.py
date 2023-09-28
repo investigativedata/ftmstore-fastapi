@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from functools import cache
 
 from fastapi import Query as QueryField
 from fastapi import Request
@@ -13,7 +12,6 @@ from ftmstore_fastapi.query import (
     AggregationParams,
     Query,
     RetrieveParams,
-    SearchQuery,
     ViewQueryParams,
 )
 from ftmstore_fastapi.serialize import (
@@ -56,7 +54,7 @@ def get_aggregation_params(
     return AggregationParams(aggSum=aggSum, aggMin=aggMin, aggMax=aggMax, aggAvg=aggAvg)
 
 
-@cache
+@cache_view
 def dataset_list(request: Request) -> CatalogResponse:
     catalog = get_catalog()
     datasets: list[Dataset] = []
@@ -68,7 +66,7 @@ def dataset_list(request: Request) -> CatalogResponse:
     return CatalogResponse.from_catalog(request, catalog)
 
 
-@cache
+@cache_view
 def dataset_detail(request: Request, name: str) -> DatasetResponse:
     view = get_view(name)
     dataset = get_dataset(name)
@@ -79,18 +77,12 @@ def dataset_detail(request: Request, name: str) -> DatasetResponse:
 @cache_view
 def entity_list(
     request: Request,
-    dataset: str,
     retrieve_params: RetrieveParams,
-    q: str | None = None,
     authenticated: bool | None = False,
 ) -> EntitiesResponse:
-    view = get_view(dataset)
+    view = get_view()
     params = ViewQueryParams.from_request(request, authenticated)
-    if q:
-        query = SearchQuery.from_params(params, dataset=dataset)
-        query.term = q
-    else:
-        query = Query.from_params(params, dataset=dataset)
+    query = Query.from_params(params)
     adjacents = []
     entities = [e for e in view.get_entities(query, retrieve_params)]
     if retrieve_params.nested:
@@ -106,9 +98,11 @@ def entity_list(
 
 @cache_view
 def entity_detail(
-    request: Request, dataset: str, entity_id: str, retrieve_params: RetrieveParams
+    request: Request,
+    entity_id: str,
+    retrieve_params: RetrieveParams,
 ) -> EntityResponse | RedirectResponse:
-    view = get_view(dataset)
+    view = get_view()
     entity = view.get_entity(entity_id, retrieve_params)
     adjacents: Iterable[CE] = []
     if retrieve_params.nested:
@@ -126,16 +120,10 @@ def entity_detail(
 
 
 @cache_view
-def aggregation(
-    request: Request,
-    dataset: str,
-    q: str | None = None,
-) -> AggregationResponse:
-    view = get_view(dataset)
+def aggregation(request: Request) -> AggregationResponse:
+    view = get_view()
     params = ViewQueryParams.from_request(request)
-    query = Query.from_params(params, dataset=dataset)
-    if q:
-        query.term = q
+    query = Query.from_params(params)
     return AggregationResponse.from_view(
         request=request,
         aggregations=view.aggregations(query),

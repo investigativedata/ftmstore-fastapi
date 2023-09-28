@@ -18,11 +18,11 @@ def test_api_catalog():
 
 
 def test_api_dataset_detail():
-    res = client.get("/ec_meetings")
+    res = client.get("/catalog/ec_meetings")
     assert res.status_code == 200
     data = res.json()
     assert data["name"] == "ec_meetings"
-    assert data["entities_url"] == "http://testserver/ec_meetings/entities"
+    assert data["entities_url"] == "http://testserver/entities?dataset=ec_meetings"
     assert (
         data["title"] == "European Commission - Meetings with interest representatives"
     )
@@ -31,17 +31,43 @@ def test_api_dataset_detail():
     ]
 
     res = client.get("/not_existent")
+    assert res.status_code == 404
+
+    res = client.get("/catalog/not_existent")
     assert res.status_code == 422  # validation error
 
 
+def test_api_entities():
+    res = client.get("/entities")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["total"] == 49822
+    assert data["items"] == 100
+
+    res = client.get("/entities?dataset=gdho")
+    assert res.status_code == 200
+    data = res.json()
+    combined = data["total"]
+    res = client.get("/entities?dataset=eu_authorities")
+    assert res.status_code == 200
+    data = res.json()
+    combined += data["total"]
+
+    res = client.get("/entities?dataset=gdho&dataset=eu_authorities")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["total"] == combined
+    assert data["items"] == 100
+
+
 def test_api_dataset_entities():
-    res = client.get("/ec_meetings/entities")
+    res = client.get("/entities?dataset=ec_meetings")
     assert res.status_code == 200
     data = res.json()
     assert data["total"] == 45038
     assert data["items"] == 100
 
-    res = client.get("/ec_meetings/entities?limit=1")
+    res = client.get("/entities?dataset=ec_meetings&limit=1")
     assert res.status_code == 200
     data = res.json()
     assert data["total"] == 45038
@@ -49,7 +75,7 @@ def test_api_dataset_entities():
     assert len(data["entities"]) == 1
 
     res = client.get(
-        "/eu_authorities/entities?jurisdiction=eu&order_by=-name&dehydrate=true"
+        "/entities?dataset=eu_authorities&jurisdiction=eu&order_by=-name&dehydrate=true"
     )
     assert res.status_code == 200
     data = res.json()
@@ -58,7 +84,7 @@ def test_api_dataset_entities():
     assert "jurisdiction" not in data["entities"][0]["properties"]
 
     res = client.get(
-        "/eu_authorities/entities?jurisdiction=eu&order_by=-name&featured=true"
+        "/entities?dataset=eu_authorities&jurisdiction=eu&order_by=-name&featured=true"
     )
     assert res.status_code == 200
     data = res.json()
@@ -66,16 +92,16 @@ def test_api_dataset_entities():
     assert data["entities"][0]["id"] == "eu-authorities-cdt"
     assert "jurisdiction" not in data["entities"][0]["properties"]
 
-    res = client.get("/eu_authorities/entities?jurisdiction__not=eu&order_by=-name")
+    res = client.get(
+        "/entities?dataset=eu_authorities&jurisdiction__not=eu&order_by=-name"
+    )
     assert res.status_code == 200
     data = res.json()
     assert data["total"] == 0
 
 
 def test_api_dataset_entity_detail():
-    res = client.get(
-        "/ec_meetings/entities/addr-00177d9455d8e1b6a3f5530ea1e7e81ce1c8333f"
-    )
+    res = client.get("/entities/addr-00177d9455d8e1b6a3f5530ea1e7e81ce1c8333f")
     data = res.json()
     assert data == {
         "id": "addr-00177d9455d8e1b6a3f5530ea1e7e81ce1c8333f",
@@ -87,60 +113,92 @@ def test_api_dataset_entity_detail():
     }
 
 
-# def test_api_search(self):
-#     res = self.client.get("/eu_authorities/entities?q=germany&dehydrate=1")
-#     res = res.json()
-#     self.assertEqual(res["items"], 1)
-# self.assertDictEqual(
-#     res,
-#     {
-#         "total": 1,
-#         "items": 1,
-#         "query": {
-#             "limit": 100,
-#             "page": 1,
-#             "schema": None,
-#             "order_by": None,
-#             "prop": None,
-#             "value": None,
-#         },
-#         "url": "http://testserver/eu_authorities/search?q=germany&dehydrate=true&limit=100&page=1",
-#         "next_url": None,
-#         "prev_url": None,
-#         "entities": [
-#             {
-#                 "id": "eu-authorities-permanent-representation-of-germany-to-the-eu",
-#                 "caption": "Permanent Representation of Germany to the EU",
-#                 "schema": "PublicBody",
-#                 "properties": {
-#                     "name": ["Permanent Representation of Germany to the EU"],
-#                     "legalForm": ["not_1049", "permanent_representative"],
-#                 },
-#                 "datasets": ["eu_authorities"],
-#                 "referents": [],
-#                 "context": {"referents": [], "datasets": ["eu_authorities"]},
-#             }
-#         ],
-#     },
-# )
+def test_api_reversed():
+    res = client.get(
+        "/entities?dataset=ec_meetings&reverse=addr-041ab56007250cb6752559152411948269a968bd"
+    )
+    data = res.json()
+    assert data["total"] == 4
+    tested = False
+    for entity in data["entities"]:
+        assert (
+            "addr-041ab56007250cb6752559152411948269a968bd"
+            in entity["properties"]["addressEntity"]
+        )
+        tested = True
+    assert tested
 
 
 def test_api_aggregation():
-    res = client.get("/ec_meetings/aggregate?schema=Event&aggMin=date&aggMax=date")
+    res = client.get(
+        "/aggregate?dataset=ec_meetings&schema=Event&aggMin=date&aggMax=date"
+    )
     data = res.json()
     data.pop("coverage")
     assert data == {
         "total": 34975,
         "query": {
+            "q": None,
             "limit": 100,
             "page": 1,
+            "dataset": ["ec_meetings"],
             "schema": "Event",
             "order_by": None,
-            "prop": None,
-            "value": None,
+            "reverse": None,
             "aggMax": "date",
             "aggMin": "date",
         },
-        "url": "http://testserver/ec_meetings/aggregate?schema=Event&aggMin=date&aggMax=date&limit=100&page=1",
+        "url": "http://testserver/aggregate?dataset=ec_meetings&schema=Event&aggMin=date&aggMax=date&limit=100&page=1",
         "aggregations": {"date": {"min": "2014-11-12", "max": "2023-01-20"}},
     }
+
+
+def test_api_search():
+    res = client.get("/entities?dataset=eu_authorities&q=agency")
+    data = res.json()
+    assert data["total"] == 151
+    assert data["items"] == 23
+    tested = False
+    for proxy in data["entities"]:
+        assert "agency" in proxy["caption"].lower()
+        tested = True
+    assert tested
+
+    res = client.get("/entities?q=berlin")
+    data = res.json()
+    assert data["total"] == 49822
+    assert data["items"] == 31
+
+    res = client.get("/entities?q=germany&dehydrate=1&dataset=eu_authorities")
+    res = res.json()
+    assert res["items"] == 1
+    assert res["entities"] == [
+        {
+            "id": "eu-authorities-permanent-representation-of-germany-to-the-eu",
+            "caption": "Permanent Representation of Germany to the EU",
+            "schema": "PublicBody",
+            "properties": {
+                "name": ["Permanent Representation of Germany to the EU"],
+            },
+            "datasets": ["eu_authorities"],
+            "referents": [],
+        }
+    ]
+
+
+def test_api_entities_id_filter():
+    res = client.get("/entities?entity_id=eu-authorities-chafea")
+    data = res.json()
+    assert data["total"] == data["items"] == 1
+    res = client.get("/entities?canonical_id=eu-authorities-chafea")
+    data = res.json()
+    assert data["total"] == data["items"] == 1
+    res = client.get("/entities?canonical_id=eu-authorities-chafea&dataset=gdho")
+    data = res.json()
+    assert data["total"] == data["items"] == 0
+    res = client.get("/entities?canonical_id__startswith=eu-authorities-")
+    data = res.json()
+    assert data["total"] == 151
+    res = client.get("/entities?canonical_id__startswith=eu-authorities-&dataset=gdho")
+    data = res.json()
+    assert data["total"] == data["items"] == 0
