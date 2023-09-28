@@ -184,3 +184,21 @@ def test_api_search():
             "referents": [],
         }
     ]
+
+
+def test_api_entities_id_filter():
+    res = client.get("/entities?entity_id=eu-authorities-chafea")
+    data = res.json()
+    assert data["total"] == data["items"] == 1
+    res = client.get("/entities?canonical_id=eu-authorities-chafea")
+    data = res.json()
+    assert data["total"] == data["items"] == 1
+    res = client.get("/entities?canonical_id=eu-authorities-chafea&dataset=gdho")
+    data = res.json()
+    assert data["total"] == data["items"] == 0
+    res = client.get("/entities?canonical_id__startswith=eu-authorities-")
+    data = res.json()
+    assert data["total"] == 151
+    res = client.get("/entities?canonical_id__startswith=eu-authorities-&dataset=gdho")
+    data = res.json()
+    assert data["total"] == data["items"] == 0
