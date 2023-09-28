@@ -15,7 +15,7 @@ from ftmstore_fastapi.serialize import (
     EntityResponse,
     ErrorResponse,
 )
-from ftmstore_fastapi.settings import STORE_URI
+from ftmstore_fastapi.settings import FTM_STORE_URI
 from ftmstore_fastapi.store import Datasets
 
 log = get_logger(__name__)
@@ -33,7 +33,7 @@ app.add_middleware(
     allow_methods=["OPTIONS", "GET"],
 )
 
-log.info("Ftm store: %s" % STORE_URI)
+log.info("Ftm store: %s" % FTM_STORE_URI)
 
 
 @app.get(

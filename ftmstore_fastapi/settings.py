@@ -12,7 +12,7 @@ CATALOG = os.environ.get("CATALOG")
 if CATALOG is not None:
     CATALOG = Path(CATALOG)
 
-STORE_URI = os.environ.get("STORE_URI", DB_URL)
+FTM_STORE_URI = os.environ.get("FTM_STORE_URI", DB_URL)
 
 DATASETS = os.environ.get("EXPOSE_DATASETS", "*")  # all by default
 DATASETS_STATS = as_bool(os.environ.get("DATASETS_STATS", 1))
