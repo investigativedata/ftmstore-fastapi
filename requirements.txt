@@ -568,7 +568,9 @@ frozenlist==1.4.0 ; python_version >= "3.10" and python_version < "3.13" \
 fsspec==2023.9.2 ; python_version >= "3.10" and python_version < "3.13" \
     --hash=sha256:603dbc52c75b84da501b9b2ec8c11e1f61c25984c4a0dda1f129ef391fbfc9b4 \
     --hash=sha256:80bfb8c70cc27b2178cc62a935ecf242fc6e8c3fb801f9c571fc01b1e715ba7d
-ftmq @ git+https://github.com/investigativedata/ftmq.git@develop ; python_version >= "3.10" and python_version < "3.13"
+ftmq==0.3.2 ; python_version >= "3.10" and python_version < "3.13" \
+    --hash=sha256:83c53bf34dfa9db3110e2ceb74f8c3897657f800f4031fc678f96d8122defa15 \
+    --hash=sha256:cc089e7d32255afe57ba6dd5dc1e503a85d11fbec24ec2577c0c48fc397f8866
 furl==2.1.3 ; python_version >= "3.10" and python_version < "3.13" \
     --hash=sha256:5a6188fe2666c484a12159c18be97a1977a71d632ef5bb867ef15f54af39cc4e \
     --hash=sha256:9ab425062c4217f9802508e45feb4a83e54324273ac4b202f1850363309666c0
