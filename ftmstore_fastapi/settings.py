@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
 from banal import as_bool
 from nomenklatura.settings import DB_URL
@@ -9,8 +8,6 @@ from ftmstore_fastapi import __version__
 VERSION = __version__
 
 CATALOG = os.environ.get("CATALOG")
-if CATALOG is not None:
-    CATALOG = Path(CATALOG)
 
 FTM_STORE_URI = os.environ.get("FTM_STORE_URI", DB_URL)
 
