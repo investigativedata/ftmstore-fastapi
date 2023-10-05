@@ -8,6 +8,7 @@ from ftmstore_fastapi import __version__
 VERSION = __version__
 
 CATALOG = os.environ.get("CATALOG")
+RESOLVER = os.environ.get("RESOLVER", os.environ.get("RESOLVER_PATH"))
 
 FTM_STORE_URI = os.environ.get("FTM_STORE_URI", DB_URL)
 
