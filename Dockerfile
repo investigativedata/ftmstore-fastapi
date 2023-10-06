@@ -1,4 +1,4 @@
-FROM ghcr.io/investigativedata/ftm-docker:main
+FROM ghcr.io/investigativedata/ftm-docker:latest
 
 COPY ftmstore_fastapi /app/ftmstore_fastapi
 COPY setup.py /app/setup.py
