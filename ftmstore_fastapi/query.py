@@ -25,6 +25,8 @@ class AggregationParams(BaseModel):
     aggMin: list[str] | None = []
     aggMax: list[str] | None = []
     aggAvg: list[str] | None = []
+    aggCount: list[str] | None = []
+    aggGroups: list[str] | None = []
 
 
 class QueryParams(BaseModel):
