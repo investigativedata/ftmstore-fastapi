@@ -1,13 +1,12 @@
 from typing import Annotated, Any
 
 from banal import clean_dict
-from fastapi import HTTPException
 from fastapi import Query as FastQuery
 from fastapi import Request
 from ftmq.aggregations import Aggregator
 from ftmq.enums import Schemata
 from ftmq.query import Query as _Query
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 from ftmstore_fastapi import settings
 from ftmstore_fastapi.store import Datasets
@@ -50,12 +49,6 @@ class QueryParams(BaseModel):
     class Config:
         allow_population_by_field_name = True
 
-    @validator("schema_")
-    def validate_schema(cls, value: str | None) -> bool:
-        if value is not None and value not in Schemata:
-            raise HTTPException(400, detail=[f"Invalid ftm schema: `{value}`"])
-        return value
-
     def to_where_lookup_dict(self) -> dict[str, Any]:
         return {k: v for k, v in self.dict().items() if v and k not in META_FIELDS}
 
@@ -65,6 +58,8 @@ META_FIELDS = (
     | set(RetrieveParams.__fields__)  # noqa: W503
     | set(QueryParams.__fields__)  # noqa: W503
 )
+
+LISTISH_PARAMS = ["dataset", *AggregationParams.__fields__.keys()]
 
 
 class ViewQueryParams(QueryParams):
@@ -81,7 +76,11 @@ class ViewQueryParams(QueryParams):
         cls, request: Request, authenticated: bool | None = False
     ) -> "ViewQueryParams":
         params = dict(request.query_params)
-        params["dataset"] = request.query_params.getlist("dataset")
+        # listish params
+        for p in LISTISH_PARAMS:
+            listish = request.query_params.getlist(p)
+            if listish:
+                params[p] = listish
         params = cls(**params)
         if not authenticated and params.limit > settings.DEFAULT_LIMIT:
             params.limit = settings.DEFAULT_LIMIT
@@ -103,14 +102,14 @@ class Query(_Query):
         q = cls()[(params.page - 1) * params.limit : params.page * params.limit]
         if params.dataset:
             q = q.where(dataset__in=params.dataset)
+        if params.schema_:
+            q = q.where(schema=params.schema_)
         if params.order_by:
             ascending = True
             if params.order_by.startswith("-"):
                 ascending = False
                 params.order_by = params.order_by.lstrip("-")
             q = q.order_by(params.order_by, ascending=ascending)
-        if params.schema_:
-            q = q.where(schema=params.schema_)
         if params.reverse:
             q = q.where(reverse=params.reverse)
         q = q.where(**params.to_where_lookup_dict())
