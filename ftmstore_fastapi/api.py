@@ -21,6 +21,7 @@ from ftmstore_fastapi.store import Datasets
 log = get_logger(__name__)
 
 app = FastAPI(
+    debug=settings.DEBUG,
     title=settings.TITLE,
     contact=settings.CONTACT,
     description=settings.DESCRIPTION,
