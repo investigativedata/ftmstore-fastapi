@@ -9,7 +9,7 @@ from typing import Any, Union
 
 from banal import clean_dict
 from fastapi import Request
-from followthemoney.model import registry
+from followthemoney.types import registry
 from ftmq.aggregations import AggregatorResult
 from ftmq.model import Catalog, Coverage, Dataset
 from ftmq.types import CE, CEGenerator
