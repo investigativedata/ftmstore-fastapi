@@ -1,6 +1,6 @@
 # ftmstore-fastapi
 
-## 2.0.1 (2023-10-19)
+## 2.1.0 (2023-10-19)
 
 - Drop support for Python 3.10 due to dependencies
 - Implement aggregation endpoints
