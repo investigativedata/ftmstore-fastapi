@@ -4,8 +4,8 @@ from banal import clean_dict
 from fastapi import Query as FastQuery
 from fastapi import Request
 from ftmq.aggregations import Aggregator
-from ftmq.enums import Schemata
 from ftmq.query import Query as _Query
+from ftmq.types import Schemata
 from pydantic import BaseModel, Field
 
 from ftmstore_fastapi import settings
