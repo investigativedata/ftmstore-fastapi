@@ -1,7 +1,8 @@
-from functools import cache
+from functools import cache, lru_cache
 from typing import TYPE_CHECKING, Literal
 
 from fastapi import HTTPException
+from ftmq.dedupe import get_resolver
 from ftmq.model import Catalog, Dataset
 from ftmq.query import Q
 from ftmq.store import Store
@@ -9,7 +10,7 @@ from ftmq.store import get_store as _get_store
 from ftmq.types import CE, CEGenerator
 
 from ftmstore_fastapi.logging import get_logger
-from ftmstore_fastapi.settings import CATALOG, FTM_STORE_URI
+from ftmstore_fastapi.settings import CATALOG, FTM_STORE_URI, RESOLVER
 from ftmstore_fastapi.util import get_dehydrated_proxy, get_featured_proxy
 
 if TYPE_CHECKING:
@@ -36,29 +37,44 @@ def get_dataset(name: str, catalog: Catalog | None = None) -> Dataset:
 
 
 @cache
-def get_store(dataset: str | None = None, catalog_uri: str | None = None) -> Store:
-    catalog = get_catalog(catalog_uri)
+def get_store(
+    dataset: str | None = None,
+    catalog_uri: str | None = None,
+    resolver_uri: str | None = None,
+) -> Store:
+    catalog = get_catalog(catalog_uri or CATALOG)
+    resolver = get_resolver(resolver_uri or RESOLVER)
     if dataset is not None:
         dataset = get_dataset(dataset, catalog)
-        return _get_store(catalog=catalog, dataset=dataset, uri=FTM_STORE_URI)
-    return _get_store(catalog=catalog, uri=FTM_STORE_URI)
+        store = _get_store(
+            catalog=catalog, dataset=dataset, uri=FTM_STORE_URI, resolver=resolver
+        )
+    else:
+        store = _get_store(catalog=catalog, uri=FTM_STORE_URI, resolver=resolver)
+    return store
 
 
 class View:
     def __init__(
-        self, dataset: str | None = None, catalog_uri: str | None = None
+        self,
+        dataset: str | None = None,
+        catalog_uri: str | None = None,
+        resolver_uri: str | None = None,
     ) -> None:
-        store = get_store(dataset, catalog_uri)
+        self.store = get_store(dataset, catalog_uri, resolver_uri)
         self.dataset = dataset
-        self.query = store.query()
-        self.view = store.default_view()
+        self.query = self.store.query()
+        self.view = self.store.default_view()
 
         self.coverage = self.query.coverage
         self.aggregations = self.query.aggregations
         self.get_adjacents = self.query.get_adjacents
 
     def get_entity(self, entity_id: str, params: "RetrieveParams") -> CE | None:
-        proxy = self.view.get_entity(entity_id)
+        canonical = self.store.resolver.get_canonical(entity_id)
+        proxy = get_cached_entity(self.view, canonical)
+        if proxy is None:
+            raise HTTPException(404, detail=[f"Entity `{entity_id}` not found."])
         if params.dehydrate:
             return get_dehydrated_proxy(proxy)
         if params.featured:
@@ -75,8 +91,17 @@ class View:
 
 
 @cache
-def get_view(dataset: str | None = None, catalog_uri: str | None = None) -> View:
-    return View(dataset, catalog_uri)
+def get_view(
+    dataset: str | None = None,
+    catalog_uri: str | None = None,
+    resolver_uri: str | None = None,
+) -> View:
+    return View(dataset, catalog_uri, resolver_uri)
+
+
+@lru_cache(10_000)
+def get_cached_entity(view: View, entity_id: str) -> CE:
+    return view.get_entity(entity_id)
 
 
 # cache at boot time

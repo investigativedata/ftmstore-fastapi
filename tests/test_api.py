@@ -145,11 +145,49 @@ def test_api_aggregation():
             "schema": "Event",
             "order_by": None,
             "reverse": None,
-            "aggMax": "date",
-            "aggMin": "date",
+            "aggMax": ["date"],
+            "aggMin": ["date"],
         },
         "url": "http://testserver/aggregate?dataset=ec_meetings&schema=Event&aggMin=date&aggMax=date&limit=100&page=1",
         "aggregations": {"date": {"min": "2014-11-12", "max": "2023-01-20"}},
+    }
+    res = client.get(
+        "/aggregate?dataset=ec_meetings&schema=Event&aggGroups=year&aggCount=id&aggCount=location"
+    )
+    data = res.json()
+    assert data["aggregations"] == {
+        "id": {"count": 34975},
+        "location": {"count": 1281},
+        "year": {
+            "groups": {
+                "count": {
+                    "id": {
+                        "2014": 550,
+                        "2015": 6691,
+                        "2016": 5199,
+                        "2017": 4047,
+                        "2018": 3873,
+                        "2019": 2321,
+                        "2020": 4640,
+                        "2021": 4079,
+                        "2022": 3499,
+                        "2023": 76,
+                    },
+                    "location": {
+                        "2014": 69,
+                        "2015": 366,
+                        "2016": 224,
+                        "2017": 171,
+                        "2018": 157,
+                        "2019": 141,
+                        "2020": 299,
+                        "2021": 280,
+                        "2022": 255,
+                        "2023": 21,
+                    },
+                }
+            }
+        },
     }
 
 
