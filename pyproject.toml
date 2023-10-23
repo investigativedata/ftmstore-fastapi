@@ -30,7 +30,7 @@ redis = "^5.0.0"
 pyicu = "^2.11"
 ftmq = "^0.4.0"
 structlog = "^23.2.0"
-fakeredis = "^2.18.0"
+fakeredis = "^2.20.0"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.1.0"
