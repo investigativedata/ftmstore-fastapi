@@ -5,7 +5,7 @@
 # * Run "pre-commit install".
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
@@ -20,7 +20,7 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.10.1
+    rev: v3.15.0
     hooks:
       - id: pyupgrade
         args: [ "--py310-plus" ]
@@ -37,12 +37,12 @@ repos:
         args: ["--profile", "black"]
 
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 23.11.0
     hooks:
       - id: black
 
   - repo: https://github.com/csachs/pyproject-flake8
-    rev: v6.0.0.post1
+    rev: v6.1.0
     hooks:
       - id: pyproject-flake8
         additional_dependencies: [ flake8-bugbear ]
@@ -50,7 +50,7 @@ repos:
         exclude: (test_[\w]+\.py)$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.5
+    rev: v2.2.6
     hooks:
       - id: codespell
         exclude: (test_[\w]+\.py|\.csv|\.json|\.lock)$
@@ -68,7 +68,7 @@ repos:
       - id: rst-inline-touching-normal
 
   - repo: https://github.com/python-poetry/poetry
-    rev: 1.6.1
+    rev: 1.7.0
     hooks:
       - id: poetry-check
       - id: poetry-lock
