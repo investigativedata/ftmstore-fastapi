@@ -27,7 +27,7 @@ fastapi = {extras = ["all"], version = "^0.111.0"}
 furl = "^2.1.3"
 redis = "^5.0.6"
 pyicu = "^2.13.1"
-ftmq = "^0.6.6"
+ftmq = "^0.6.7"
 structlog = "^24.2.0"
 fakeredis = "^2.20.0"
 
