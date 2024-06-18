@@ -11,7 +11,7 @@ followthemoney.store:
 	poetry run ftmq --store-dataset gdho -i ./tests/fixtures/gdho.ftm.json -o $(FTM_STORE_URI)
 
 test: followthemoney.store
-	poetry run pytest -s --cov=ftmstore_fastapi --cov-report term-missing -v
+	poetry run pytest -s --cov=ftmstore_fastapi --cov-report lcov -v
 
 typecheck:
 	# pip install types-python-jose
