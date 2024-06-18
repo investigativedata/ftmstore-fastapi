@@ -26,9 +26,8 @@ def test_api_dataset_detail():
     assert (
         data["title"] == "European Commission - Meetings with interest representatives"
     )
-    assert data["coverage"]["countries"] == [
-        {"code": "eu", "count": 103, "label": "eu"}
-    ]
+    assert data["things"]["countries"] == [{"code": "eu", "count": 103, "label": "eu"}]
+    assert data["coverage"]["countries"] == ["eu"]
 
     res = client.get("/not_existent")
     assert res.status_code == 404
@@ -134,8 +133,41 @@ def test_api_aggregation():
         "/aggregate?dataset=ec_meetings&schema=Event&aggMin=date&aggMax=date"
     )
     data = res.json()
-    data.pop("coverage")
     assert data == {
+        "stats": {
+            "coverage": {
+                "start": "2014-11-12",
+                "end": "2023-01-20",
+                "frequency": "unknown",
+                "countries": [],
+                "schedule": None,
+            },
+            "things": {
+                "total": 34975,
+                "countries": [],
+                "schemata": [
+                    {
+                        "name": "Event",
+                        "count": 34975,
+                        "label": "Event",
+                        "plural": "Events",
+                    }
+                ],
+            },
+            "intervals": {
+                "total": 34975,
+                "countries": [],
+                "schemata": [
+                    {
+                        "name": "Event",
+                        "count": 34975,
+                        "label": "Event",
+                        "plural": "Events",
+                    }
+                ],
+            },
+            "entity_count": 34975,
+        },
         "total": 34975,
         "query": {
             "q": None,
