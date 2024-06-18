@@ -23,7 +23,7 @@ log = get_logger(__name__)
 def get_catalog(uri: str | None = CATALOG) -> Catalog:
     uri = uri or CATALOG
     if uri is not None:
-        return Catalog.from_uri(uri)
+        return Catalog._from_uri(uri)
     return Catalog()
 
 
@@ -66,7 +66,7 @@ class View:
         self.query = self.store.query()
         self.view = self.store.default_view()
 
-        self.coverage = self.query.coverage
+        self.stats = self.query.stats
         self.aggregations = self.query.aggregations
         self.get_adjacents = self.query.get_adjacents
 

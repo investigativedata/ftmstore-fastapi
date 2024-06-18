@@ -60,7 +60,7 @@ def dataset_list(request: Request) -> CatalogResponse:
     datasets: list[Dataset] = []
     for dataset in catalog.datasets:
         view = get_view(dataset.name)
-        dataset.coverage = view.coverage()
+        dataset.apply_stats(view.stats())
         datasets.append(dataset)
     catalog.datasets = datasets
     return CatalogResponse.from_catalog(request, catalog)
@@ -70,7 +70,7 @@ def dataset_list(request: Request) -> CatalogResponse:
 def dataset_detail(request: Request, name: str) -> DatasetResponse:
     view = get_view(name)
     dataset = get_dataset(name)
-    dataset.coverage = view.coverage()
+    dataset.apply_stats(view.stats())
     return DatasetResponse.from_dataset(request, dataset)
 
 
@@ -91,7 +91,7 @@ def entity_list(
         request=request,
         entities=entities,
         adjacents=adjacents,
-        coverage=view.coverage(query),
+        stats=view.stats(query),
         authenticated=authenticated,
     )
 
@@ -127,5 +127,5 @@ def aggregation(request: Request) -> AggregationResponse:
     return AggregationResponse.from_view(
         request=request,
         aggregations=view.aggregations(query),
-        coverage=view.coverage(query),
+        stats=view.stats(query),
     )

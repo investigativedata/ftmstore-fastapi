@@ -5,13 +5,13 @@ https://github.com/opensanctions/yente/
 
 from collections import defaultdict
 from collections.abc import Iterable
-from typing import Any, Union
+from typing import Any, Self, Union
 
 from banal import clean_dict
 from fastapi import Request
 from followthemoney.types import registry
 from ftmq.aggregations import AggregatorResult
-from ftmq.model import Catalog, Coverage, Dataset
+from ftmq.model import Catalog, Dataset, DatasetStats
 from ftmq.types import CE, CEGenerator
 from furl import furl
 from pydantic import BaseModel, Field
@@ -59,13 +59,13 @@ class EntityResponse(BaseModel):
         )
 
 
-EntityResponse.update_forward_refs()
+EntityResponse.model_rebuild()
 
 
 class EntitiesResponse(BaseModel):
     total: int
     items: int
-    coverage: Coverage
+    stats: DatasetStats
     query: ViewQueryParams
     url: str
     next_url: str | None = None
@@ -77,28 +77,28 @@ class EntitiesResponse(BaseModel):
         cls,
         request: Request,
         entities: CEGenerator,
-        coverage: Coverage,
+        stats: DatasetStats,
         adjacents: Iterable[CE] | None = None,
         authenticated: bool | None = False,
     ) -> "EntitiesResponse":
         query = ViewQueryParams.from_request(request, authenticated)
-        url = furl(request.url)
-        query_data = clean_dict(query.dict())
+        url = furl(str(request.url))
+        query_data = clean_dict(query.model_dump())
         query_data.pop("schema_", None)
         url.args.update(query_data)
         entities = [EntityResponse.from_entity(e, adjacents) for e in entities]
         response = cls(
-            total=coverage.entities,
+            total=stats.entity_count,
             items=len(entities),
             query=query,
             entities=entities,
-            coverage=coverage,
+            stats=stats,
             url=str(url),
         )
         if query.page > 1:
             url.args["page"] = query.page - 1
             response.prev_url = str(url)
-        if query.limit * query.page < coverage.entities:
+        if query.limit * query.page < stats.entity_count:
             url.args["page"] = query.page + 1
             response.next_url = str(url)
         return response
@@ -106,7 +106,7 @@ class EntitiesResponse(BaseModel):
 
 class AggregationResponse(BaseModel):
     total: int
-    coverage: Coverage
+    stats: DatasetStats
     query: ViewQueryParams
     url: str
     aggregations: Aggregations
@@ -115,13 +115,13 @@ class AggregationResponse(BaseModel):
     def from_view(
         cls,
         request: Request,
-        coverage: Coverage,
+        stats: DatasetStats,
         aggregations: AggregatorResult,
         authenticated: bool | None = False,
-    ) -> "AggregationResponse":
+    ) -> Self:
         query = ViewQueryParams.from_request(request, authenticated)
-        url = furl(request.url)
-        query_data = clean_dict(query.dict())
+        url = furl(str(request.url))
+        query_data = clean_dict(query.model_dump())
         query_data.pop("schema_", None)
         url.args.update(query_data)
 
@@ -132,9 +132,9 @@ class AggregationResponse(BaseModel):
                 agg_data[field][func] = value
 
         return cls(
-            total=coverage.entities,
+            total=stats.entity_count,
             query=query,
-            coverage=coverage,
+            stats=stats,
             aggregations=agg_data,
             url=str(url),
         )
@@ -144,9 +144,9 @@ class DatasetResponse(Dataset):
     entities_url: str | None = None
 
     @classmethod
-    def from_dataset(cls, request: Request, dataset: Dataset) -> "DatasetResponse":
+    def from_dataset(cls, request: Request, dataset: Dataset) -> Self:
         return cls(
-            **dataset.dict(),
+            **dataset.model_dump(),
             entities_url=f"{request.base_url}entities?dataset={dataset.name}",
         )
 
@@ -155,7 +155,7 @@ class CatalogResponse(Catalog):
     datasets: list[DatasetResponse]
 
     @classmethod
-    def from_catalog(cls, request: Request, catalog: Catalog) -> "CatalogResponse":
+    def from_catalog(cls, request: Request, catalog: Catalog) -> Self:
         return cls(
             datasets=[
                 DatasetResponse.from_dataset(request, d) for d in catalog.datasets
