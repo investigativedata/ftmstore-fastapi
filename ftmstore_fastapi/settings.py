@@ -60,5 +60,5 @@ There are four main api endpoints:
 Two more endpoints for catalog / dataset metadata:
 
 * Catalog overview: [`/catalog`](/catalog)
-* Dataset metadata: `/{dataset}`
+* Dataset metadata: `/catalog/{dataset}`
 """
