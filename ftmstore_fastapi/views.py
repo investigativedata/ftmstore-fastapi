@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 
+from anystore import anycache
 from fastapi import Query as QueryField
 from fastapi import Request
 from fastapi.responses import RedirectResponse
@@ -7,7 +8,7 @@ from ftmq.model import Dataset
 from ftmq.types import CE
 from furl import furl
 
-from ftmstore_fastapi.cache import cache_view
+from ftmstore_fastapi.cache import get_cache_key
 from ftmstore_fastapi.query import (
     AggregationParams,
     Query,
@@ -54,7 +55,7 @@ def get_aggregation_params(
     return AggregationParams(aggSum=aggSum, aggMin=aggMin, aggMax=aggMax, aggAvg=aggAvg)
 
 
-@cache_view
+@anycache(key_func=get_cache_key, serialization_mode="pickle")
 def dataset_list(request: Request) -> CatalogResponse:
     catalog = get_catalog()
     datasets: list[Dataset] = []
@@ -66,7 +67,7 @@ def dataset_list(request: Request) -> CatalogResponse:
     return CatalogResponse.from_catalog(request, catalog)
 
 
-@cache_view
+@anycache(key_func=get_cache_key, serialization_mode="pickle")
 def dataset_detail(request: Request, name: str) -> DatasetResponse:
     view = get_view(name)
     dataset = get_dataset(name)
@@ -74,7 +75,7 @@ def dataset_detail(request: Request, name: str) -> DatasetResponse:
     return DatasetResponse.from_dataset(request, dataset)
 
 
-@cache_view
+@anycache(key_func=get_cache_key, serialization_mode="pickle")
 def entity_list(
     request: Request,
     retrieve_params: RetrieveParams,
@@ -96,7 +97,7 @@ def entity_list(
     )
 
 
-@cache_view
+@anycache(key_func=get_cache_key, serialization_mode="pickle")
 def entity_detail(
     request: Request,
     entity_id: str,
@@ -119,7 +120,7 @@ def entity_detail(
     return EntityResponse.from_entity(entity, adjacents)
 
 
-@cache_view
+@anycache(key_func=get_cache_key, model=AggregationResponse)
 def aggregation(request: Request) -> AggregationResponse:
     view = get_view()
     params = ViewQueryParams.from_request(request)

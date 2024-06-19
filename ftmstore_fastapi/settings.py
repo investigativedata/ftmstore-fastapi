@@ -1,5 +1,6 @@
 import os
 
+from anystore.io import smart_read
 from banal import as_bool
 from nomenklatura.settings import DB_URL
 
@@ -60,5 +61,8 @@ There are four main api endpoints:
 Two more endpoints for catalog / dataset metadata:
 
 * Catalog overview: [`/catalog`](/catalog)
-* Dataset metadata: `/{dataset}`
+* Dataset metadata: `/catalog/{dataset}`
 """
+DESCRIPTION_URI = os.environ.get("DESCRIPTION_URI")
+if DESCRIPTION_URI is not None:
+    DESCRIPTION = smart_read(DESCRIPTION_URI)
