@@ -29,6 +29,7 @@ pyicu = "^2.13.1"
 ftmq = "^0.6.8"
 structlog = "^24.2.0"
 anystore = {extras = ["redis"], version = "^0.1.6"}
+fakeredis = "^2.23.3"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.1.0"
