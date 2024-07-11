@@ -6,7 +6,7 @@ from fastapi import Request
 from ftmq.aggregations import Aggregator
 from ftmq.query import Query as _Query
 from ftmq.types import Schemata
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ftmstore_fastapi import settings
 from ftmstore_fastapi.store import Datasets
@@ -29,6 +29,8 @@ class AggregationParams(BaseModel):
 
 
 class QueryParams(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     q: Annotated[
         str | None, FastQuery(description="Optional search query for fuzzy search")
     ] = None
@@ -46,26 +48,21 @@ class QueryParams(BaseModel):
     order_by: str | None = Field(None, example="-date")
     reverse: str | None = Field(None, example="eu-id-1234")
 
-    class Config:
-        allow_population_by_field_name = True
-
     def to_where_lookup_dict(self) -> dict[str, Any]:
         return {k: v for k, v in self.dict().items() if v and k not in META_FIELDS}
 
 
 META_FIELDS = (
-    set(AggregationParams.__fields__)
-    | set(RetrieveParams.__fields__)  # noqa: W503
-    | set(QueryParams.__fields__)  # noqa: W503
+    set(AggregationParams.model_fields)
+    | set(RetrieveParams.model_fields)  # noqa: W503
+    | set(QueryParams.model_fields)  # noqa: W503
 )
 
 LISTISH_PARAMS = ["dataset", *AggregationParams.__fields__.keys()]
 
 
 class ViewQueryParams(QueryParams):
-    class Config:
-        extra = "allow"
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     def __init__(self, **data):
         data.pop("api_key", None)
@@ -90,7 +87,7 @@ class ViewQueryParams(QueryParams):
         data = clean_dict(
             {
                 k[3:].lower(): getattr(self, k, None)
-                for k in AggregationParams.__fields__
+                for k in AggregationParams.model_fields
             }
         )
         return Aggregator.from_dict(data)
