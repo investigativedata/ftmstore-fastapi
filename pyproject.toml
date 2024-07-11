@@ -14,6 +14,7 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 
 [tool.poetry.urls]
@@ -21,12 +22,13 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.12"
+python = ">=3.11,<4"
 fastapi = {extras = ["all"], version = "^0.111.0"}
 furl = "^2.1.3"
 pyicu = "^2.13.1"
-ftmq = {extras = ["redis", "sql"], version = "^0.6.7"}
+ftmq = "^0.6.8"
 structlog = "^24.2.0"
+anystore = {extras = ["redis"], version = "^0.1.6"}
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.1.0"
@@ -49,6 +51,6 @@ build-backend = "poetry.core.masonry.api"
 env = [
     "FTM_STORE_URI=sqlite:///followthemoney.store",
     "CATALOG=./tests/fixtures/catalog.json",
-    "DEBUG=1",
-    "CACHE=1"
+    "REDIS_DEBUG=1",
+    "ANYSTORE_URI=redis://localhost"
 ]
