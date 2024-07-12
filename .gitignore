@@ -1,4 +1,5 @@
 data/
+.anystore
 *.db
 *.store
 # Byte-compiled / optimized / DLL files

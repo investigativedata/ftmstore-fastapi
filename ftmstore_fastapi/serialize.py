@@ -14,7 +14,7 @@ from ftmq.aggregations import AggregatorResult
 from ftmq.model import Catalog, Dataset, DatasetStats
 from ftmq.types import CE, CEGenerator
 from furl import furl
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ftmstore_fastapi.query import ViewQueryParams
 
@@ -27,15 +27,14 @@ class ErrorResponse(BaseModel):
 
 
 class EntityResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     id: str = Field(..., example="NK-A7z....")
     caption: str = Field(..., example="John Doe")
     schema_: str = Field(..., example="LegalEntity", alias="schema")
     properties: EntityProperties = Field(..., example={"name": ["John Doe"]})
     datasets: list[str] = Field([], example=["us_ofac_sdn"])
     referents: list[str] = Field([], example=["ofac-1234"])
-
-    class Config:
-        allow_population_by_field_name = True
 
     @classmethod
     def from_entity(
