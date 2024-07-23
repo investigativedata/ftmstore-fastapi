@@ -120,7 +120,7 @@ def entity_detail(
     return EntityResponse.from_entity(entity, adjacents)
 
 
-@anycache(key_func=get_cache_key, model=AggregationResponse)
+@anycache(key_func=get_cache_key, serialization_mode="pickle")
 def aggregation(request: Request) -> AggregationResponse:
     view = get_view()
     params = ViewQueryParams.from_request(request)
