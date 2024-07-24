@@ -6,6 +6,7 @@ from fastapi import Request
 from fastapi.responses import RedirectResponse
 from ftmq.model import Dataset
 from ftmq.types import CE
+from ftmq.util import get_dehydrated_proxy
 from furl import furl
 
 from ftmstore_fastapi.cache import get_cache_key
@@ -23,7 +24,6 @@ from ftmstore_fastapi.serialize import (
     EntityResponse,
 )
 from ftmstore_fastapi.store import get_catalog, get_dataset, get_view
-from ftmstore_fastapi.util import get_dehydrated_proxy
 
 
 def get_retrieve_params(

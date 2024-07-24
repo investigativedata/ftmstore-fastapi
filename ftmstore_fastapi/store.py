@@ -8,10 +8,10 @@ from ftmq.query import Q
 from ftmq.store import Store
 from ftmq.store import get_store as _get_store
 from ftmq.types import CE, CEGenerator
+from ftmq.util import get_dehydrated_proxy, get_featured_proxy
 
 from ftmstore_fastapi.logging import get_logger
 from ftmstore_fastapi.settings import CATALOG, FTM_STORE_URI, RESOLVER
-from ftmstore_fastapi.util import get_dehydrated_proxy, get_featured_proxy
 
 if TYPE_CHECKING:
     from ftmstore_fastapi.views import RetrieveParams
@@ -47,10 +47,10 @@ def get_store(
     if dataset is not None:
         dataset = get_dataset(dataset, catalog)
         store = _get_store(
-            catalog=catalog, dataset=dataset, uri=FTM_STORE_URI, resolver=resolver
+            catalog=catalog, dataset=dataset, uri=FTM_STORE_URI, linker=resolver
         )
     else:
-        store = _get_store(catalog=catalog, uri=FTM_STORE_URI, resolver=resolver)
+        store = _get_store(catalog=catalog, uri=FTM_STORE_URI, linker=resolver)
     return store
 
 
@@ -71,7 +71,7 @@ class View:
         self.get_adjacents = self.query.get_adjacents
 
     def get_entity(self, entity_id: str, params: "RetrieveParams") -> CE | None:
-        canonical = self.store.resolver.get_canonical(entity_id)
+        canonical = self.store.linker.get_canonical(entity_id)
         proxy = get_cached_entity(self.view, canonical)
         if proxy is None:
             raise HTTPException(404, detail=[f"Entity `{entity_id}` not found."])
