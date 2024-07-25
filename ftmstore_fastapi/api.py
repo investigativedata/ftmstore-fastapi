@@ -52,7 +52,7 @@ async def dataset_list(request: Request) -> CatalogResponse:
 
     This is basically a list of the available dataset within this api instance.
     """
-    return views.dataset_list(request)
+    return await views.dataset_list(request)
 
 
 @app.get(
@@ -67,7 +67,7 @@ async def dataset_detail(request: Request, dataset: Datasets) -> DatasetResponse
     Show metadata for given dataset (as described in
     [nomenklatura.Dataset](https://github.com/opensanctions/nomenklatura))
     """
-    return views.dataset_detail(request, dataset)
+    return await views.dataset_detail(request, dataset)
 
 
 def get_authenticated(
@@ -146,7 +146,9 @@ async def entities(
     Use optional `q` parameter for a search term. This does a simple name matching
     search, use the `/search` endpoint for actual fulltext search via `ftmq-search`
     """
-    return views.entity_list(request, retrieve_params, authenticated=authenticated)
+    return await views.entity_list(
+        request, retrieve_params, authenticated=authenticated
+    )
 
 
 @app.get(
@@ -175,7 +177,7 @@ async def detail_entity(
         `x-entity-id` - the new entity id
         `x-entity-schema` - the new entity schema
     """
-    return views.entity_detail(request, entity_id, retrieve_params)
+    return await views.entity_detail(request, entity_id, retrieve_params)
 
 
 @app.get(
@@ -203,7 +205,7 @@ async def aggregation(
 
         ?aggMax=amount&aggMax=date
     """
-    return views.aggregation(request)
+    return await views.aggregation(request)
 
 
 @app.get(
@@ -225,7 +227,7 @@ async def search(
     Returned entities are "dehydrated" and only contain properties defined
     during indexing.
     """
-    return views.search(request, authenticated=authenticated)
+    return await views.search(request, authenticated=authenticated)
 
 
 @app.get(
@@ -239,4 +241,4 @@ async def autocomplete(q: str) -> AutocompleteResponse:
     """
     Simple autocomplete by names
     """
-    return views.autocomplete(q)
+    return await views.autocomplete(q)

@@ -68,27 +68,27 @@ def get_aggregation_params(
 
 
 @anycache(key_func=get_cache_key, serialization_mode="pickle")
-def dataset_list(request: Request) -> CatalogResponse:
+async def dataset_list(request: Request) -> CatalogResponse:
     catalog = get_catalog()
     datasets: list[Dataset] = []
     for dataset in catalog.datasets:
         view = get_view(dataset.name)
-        dataset.apply_stats(view.stats())
+        dataset.apply_stats(await view.stats())
         datasets.append(dataset)
     catalog.datasets = datasets
     return CatalogResponse.from_catalog(request, catalog)
 
 
 @anycache(key_func=get_cache_key, serialization_mode="pickle")
-def dataset_detail(request: Request, name: str) -> DatasetResponse:
+async def dataset_detail(request: Request, name: str) -> DatasetResponse:
     view = get_view(name)
     dataset = get_dataset(name)
-    dataset.apply_stats(view.stats())
+    dataset.apply_stats(await view.stats())
     return DatasetResponse.from_dataset(request, dataset)
 
 
 @anycache(key_func=get_cache_key, serialization_mode="pickle")
-def entity_list(
+async def entity_list(
     request: Request,
     retrieve_params: RetrieveParams,
     authenticated: bool | None = False,
@@ -97,29 +97,29 @@ def entity_list(
     params = ViewQueryParams.from_request(request, authenticated)
     query = Query.from_params(params)
     adjacents = []
-    entities = [e for e in view.get_entities(query, retrieve_params)]
+    entities = [e async for e in view.get_entities(query, retrieve_params)]
     if retrieve_params.nested:
-        adjacents = view.get_adjacents(entities)
+        adjacents = await view.get_adjacents(entities)
     return EntitiesResponse.from_view(
         request=request,
         entities=entities,
         adjacents=adjacents,
-        stats=view.stats(query),
+        stats=await view.stats(query),
         authenticated=authenticated,
     )
 
 
 @anycache(key_func=get_cache_key, serialization_mode="pickle")
-def entity_detail(
+async def entity_detail(
     request: Request,
     entity_id: str,
     retrieve_params: RetrieveParams,
 ) -> EntityResponse | RedirectResponse:
     view = get_view()
-    entity = view.get_entity(entity_id, retrieve_params)
+    entity = await view.get_entity(entity_id, retrieve_params)
     adjacents: Iterable[CE] = []
     if retrieve_params.nested:
-        adjacents = [e[1] for e in view.view.get_adjacent(entity)]
+        adjacents = [e[1] async for e in view.get_adjacent(entity)]
         if retrieve_params.dehydrate_nested:
             adjacents = [get_dehydrated_proxy(e) for e in adjacents]
     if entity.id != entity_id:  # we have a redirect to a merged entity
@@ -133,19 +133,21 @@ def entity_detail(
 
 
 @anycache(key_func=get_cache_key, serialization_mode="pickle")
-def aggregation(request: Request) -> AggregationResponse:
+async def aggregation(request: Request) -> AggregationResponse:
     view = get_view()
     params = ViewQueryParams.from_request(request)
     query = Query.from_params(params)
     return AggregationResponse.from_view(
         request=request,
-        aggregations=view.aggregations(query),
-        stats=view.stats(query),
+        aggregations=await view.aggregations(query),
+        stats=await view.stats(query),
     )
 
 
 @anycache(key_func=get_cache_key, serialization_mode="pickle")
-def search(request: Request, authenticated: bool | None = False) -> EntitiesResponse:
+async def search(
+    request: Request, authenticated: bool | None = False
+) -> EntitiesResponse:
     params = SearchQueryParams.from_request(request, authenticated)
     q = params.q
     if q is None or len(q) < 4:
@@ -162,7 +164,7 @@ def search(request: Request, authenticated: bool | None = False) -> EntitiesResp
 
 
 @anycache(key_func=get_cache_key, serialization_mode="pickle")
-def autocomplete(q: str) -> AutocompleteResponse:
+async def autocomplete(q: str) -> AutocompleteResponse:
     if q is None or len(q) < 4:
         raise HTTPException(400, [f"Invalid search query: `{q}`"])
     store = get_search_store()
