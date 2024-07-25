@@ -8,8 +8,9 @@ from ftmq.model import Dataset
 from ftmq.types import CE
 from ftmq.util import get_dehydrated_proxy
 from furl import furl
+from normality import slugify
 
-from ftmstore_fastapi.cache import get_cache_key
+from ftmstore_fastapi import settings
 from ftmstore_fastapi.query import (
     AggregationParams,
     Query,
@@ -24,6 +25,12 @@ from ftmstore_fastapi.serialize import (
     EntityResponse,
 )
 from ftmstore_fastapi.store import get_catalog, get_dataset, get_view
+
+
+def get_cache_key(request: Request, *args, **kwargs) -> str | None:
+    if not settings.CACHE:
+        return None
+    return f"{settings.CACHE_PREFIX}/{slugify(str(request.url))}"
 
 
 def get_retrieve_params(

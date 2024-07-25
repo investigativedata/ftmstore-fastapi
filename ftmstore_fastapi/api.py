@@ -4,7 +4,7 @@ from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
-from ftmstore_fastapi import settings, views
+from ftmstore_fastapi import __version__, settings, views
 from ftmstore_fastapi.logging import get_logger
 from ftmstore_fastapi.query import QueryParams
 from ftmstore_fastapi.serialize import (
@@ -26,7 +26,7 @@ app = FastAPI(
     contact=settings.CONTACT,
     description=settings.DESCRIPTION,
     redoc_url="/",
-    version=settings.VERSION,
+    version=__version__,
 )
 app.add_middleware(
     CORSMiddleware,
