@@ -272,3 +272,13 @@ def test_api_entities_id_filter():
     res = client.get("/entities?canonical_id__startswith=eu-authorities-&dataset=gdho")
     data = res.json()
     assert data["total"] == data["items"] == 0
+
+
+def test_api_search_fts():
+    res = client.get("/search?dataset=eu_authorities&q=agency")
+    data = res.json()
+    assert data["items"] == 51
+
+    res = client.get("/autocomplete?q=european defence")
+    data = res.json()
+    assert len(data["candidates"]) == 1

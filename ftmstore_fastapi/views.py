@@ -1,12 +1,14 @@
 from collections.abc import Iterable
 
 from anystore import anycache
+from fastapi import HTTPException
 from fastapi import Query as QueryField
 from fastapi import Request
 from fastapi.responses import RedirectResponse
 from ftmq.model import Dataset
 from ftmq.types import CE
 from ftmq.util import get_dehydrated_proxy
+from ftmq_search.store import get_store as get_search_store
 from furl import furl
 from normality import slugify
 
@@ -15,10 +17,13 @@ from ftmstore_fastapi.query import (
     AggregationParams,
     Query,
     RetrieveParams,
+    SearchQuery,
+    SearchQueryParams,
     ViewQueryParams,
 )
 from ftmstore_fastapi.serialize import (
     AggregationResponse,
+    AutocompleteResponse,
     CatalogResponse,
     DatasetResponse,
     EntitiesResponse,
@@ -137,3 +142,28 @@ def aggregation(request: Request) -> AggregationResponse:
         aggregations=view.aggregations(query),
         stats=view.stats(query),
     )
+
+
+@anycache(key_func=get_cache_key, serialization_mode="pickle")
+def search(request: Request, authenticated: bool | None = False) -> EntitiesResponse:
+    params = SearchQueryParams.from_request(request, authenticated)
+    q = params.q
+    if q is None or len(q) < 4:
+        raise HTTPException(400, [f"Invalid search query: `{q}`"])
+    params.q = None
+    query = SearchQuery.from_params(params)
+    store = get_search_store()
+    entities = (e.as_proxy() for e in store.search(q, query))
+    return EntitiesResponse.from_view(
+        request=request,
+        entities=entities,
+        authenticated=authenticated,
+    )
+
+
+@anycache(key_func=get_cache_key, serialization_mode="pickle")
+def autocomplete(q: str) -> AutocompleteResponse:
+    if q is None or len(q) < 4:
+        raise HTTPException(400, [f"Invalid search query: `{q}`"])
+    store = get_search_store()
+    return AutocompleteResponse(candidates=store.autocomplete(q))
