@@ -99,7 +99,7 @@ async def entity_list(
     adjacents = []
     entities = [e async for e in view.get_entities(query, retrieve_params)]
     if retrieve_params.nested:
-        adjacents = await view.get_adjacents(entities)
+        adjacents = await view.get_adjacents(entities, inverted=False)
     return EntitiesResponse.from_view(
         request=request,
         entities=entities,
