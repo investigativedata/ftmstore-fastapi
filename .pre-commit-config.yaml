@@ -23,7 +23,7 @@ repos:
     rev: v3.16.0
     hooks:
       - id: pyupgrade
-        args: [ "--py310-plus" ]
+        args: [ "--py311-plus" ]
 
   - repo: https://github.com/MarcoGorelli/absolufy-imports
     rev: v0.3.1

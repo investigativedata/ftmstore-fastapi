@@ -1,16 +1,14 @@
-from collections.abc import AsyncGenerator
 from functools import cache
 from typing import TYPE_CHECKING, Literal
 
 from anystore import anycache
 from fastapi import HTTPException
 from ftmq.dedupe import get_resolver
-from ftmq.model import Catalog, Dataset, DatasetStats
+from ftmq.model import Catalog, Dataset
 from ftmq.query import Q
 from ftmq.store import Store
 from ftmq.store import get_store as _get_store
-from ftmq.store.sql import AggregatorResult
-from ftmq.types import CE
+from ftmq.types import CE, CEGenerator
 from ftmq.util import get_dehydrated_proxy, get_featured_proxy
 
 from ftmstore_fastapi.logging import get_logger
@@ -69,20 +67,11 @@ class View:
         self.query = self.store.query()
         self.view = self.store.default_view()
 
-    async def stats(self, *args, **kwargs) -> DatasetStats:
-        return self.query.stats(*args, **kwargs)
+        self.stats = self.query.stats
+        self.aggregations = self.query.aggregations
+        self.get_adjacents = self.query.get_adjacents
 
-    async def aggregations(self, *args, **kwargs) -> AggregatorResult:
-        return self.query.aggregations(*args, **kwargs)
-
-    async def get_adjacents(self, *args, **kwargs) -> set[CE]:
-        return self.query.get_adjacents(*args, **kwargs)
-
-    async def get_adjacent(self, *args, **kwargs) -> AsyncGenerator:
-        for res in self.view.get_adjacent(*args, **kwargs):
-            yield res
-
-    async def get_entity(self, entity_id: str, params: "RetrieveParams") -> CE | None:
+    def get_entity(self, entity_id: str, params: "RetrieveParams") -> CE | None:
         canonical = self.store.linker.get_canonical(entity_id)
         proxy = get_cached_entity(self.view, canonical)
         if proxy is None:
@@ -93,9 +82,7 @@ class View:
             return get_featured_proxy(proxy)
         return proxy
 
-    async def get_entities(
-        self, query: Q, params: "RetrieveParams"
-    ) -> AsyncGenerator[CE, None]:
+    def get_entities(self, query: Q, params: "RetrieveParams") -> CEGenerator:
         for proxy in self.query.entities(query):
             if params.dehydrate:
                 proxy = get_dehydrated_proxy(proxy)
