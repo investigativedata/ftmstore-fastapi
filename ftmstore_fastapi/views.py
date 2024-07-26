@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 
-from anystore import anycache
+from anystore.decorators import async_anycache
 from fastapi import HTTPException
 from fastapi import Query as QueryField
 from fastapi import Request
@@ -67,7 +67,7 @@ def get_aggregation_params(
     return AggregationParams(aggSum=aggSum, aggMin=aggMin, aggMax=aggMax, aggAvg=aggAvg)
 
 
-@anycache(key_func=get_cache_key, serialization_mode="pickle")
+@async_anycache(key_func=get_cache_key, serialization_mode="pickle")
 async def dataset_list(request: Request) -> CatalogResponse:
     catalog = get_catalog()
     datasets: list[Dataset] = []
@@ -79,7 +79,7 @@ async def dataset_list(request: Request) -> CatalogResponse:
     return CatalogResponse.from_catalog(request, catalog)
 
 
-@anycache(key_func=get_cache_key, serialization_mode="pickle")
+@async_anycache(key_func=get_cache_key, serialization_mode="pickle")
 async def dataset_detail(request: Request, name: str) -> DatasetResponse:
     view = get_view(name)
     dataset = get_dataset(name)
@@ -87,7 +87,7 @@ async def dataset_detail(request: Request, name: str) -> DatasetResponse:
     return DatasetResponse.from_dataset(request, dataset)
 
 
-@anycache(key_func=get_cache_key, serialization_mode="pickle")
+@async_anycache(key_func=get_cache_key, serialization_mode="pickle")
 async def entity_list(
     request: Request,
     retrieve_params: RetrieveParams,
@@ -109,7 +109,7 @@ async def entity_list(
     )
 
 
-@anycache(key_func=get_cache_key, serialization_mode="pickle")
+@async_anycache(key_func=get_cache_key, serialization_mode="pickle")
 async def entity_detail(
     request: Request,
     entity_id: str,
@@ -132,7 +132,7 @@ async def entity_detail(
     return EntityResponse.from_entity(entity, adjacents)
 
 
-@anycache(key_func=get_cache_key, serialization_mode="pickle")
+@async_anycache(key_func=get_cache_key, serialization_mode="pickle")
 async def aggregation(request: Request) -> AggregationResponse:
     view = get_view()
     params = ViewQueryParams.from_request(request)
@@ -144,7 +144,7 @@ async def aggregation(request: Request) -> AggregationResponse:
     )
 
 
-@anycache(key_func=get_cache_key, serialization_mode="pickle")
+@async_anycache(key_func=get_cache_key, serialization_mode="pickle")
 async def search(
     request: Request, authenticated: bool | None = False
 ) -> EntitiesResponse:
@@ -163,8 +163,8 @@ async def search(
     )
 
 
-@anycache(key_func=get_cache_key, serialization_mode="pickle")
-async def autocomplete(q: str) -> AutocompleteResponse:
+@async_anycache(key_func=get_cache_key, serialization_mode="pickle")
+async def autocomplete(request: Request, q: str) -> AutocompleteResponse:
     if q is None or len(q) < 4:
         raise HTTPException(400, [f"Invalid search query: `{q}`"])
     store = get_search_store()

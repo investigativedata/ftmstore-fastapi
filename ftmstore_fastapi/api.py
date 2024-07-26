@@ -237,8 +237,8 @@ async def search(
         500: {"model": ErrorResponse, "description": "Server error"},
     },
 )
-async def autocomplete(q: str) -> AutocompleteResponse:
+async def autocomplete(request: Request, q: str) -> AutocompleteResponse:
     """
     Simple autocomplete by names
     """
-    return await views.autocomplete(q)
+    return await views.autocomplete(request, q)
