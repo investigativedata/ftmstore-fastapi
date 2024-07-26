@@ -1,7 +1,8 @@
 from collections.abc import AsyncGenerator
-from functools import cache, lru_cache
+from functools import cache
 from typing import TYPE_CHECKING, Literal
 
+from anystore import anycache
 from fastapi import HTTPException
 from ftmq.dedupe import get_resolver
 from ftmq.model import Catalog, Dataset, DatasetStats
@@ -112,7 +113,7 @@ def get_view(
     return View(dataset, catalog_uri, resolver_uri)
 
 
-@lru_cache(10_000)
+@anycache(key_func=lambda _, entity_id: entity_id)
 def get_cached_entity(view: View, entity_id: str) -> CE:
     return view.get_entity(entity_id)
 
