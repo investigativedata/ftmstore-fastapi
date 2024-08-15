@@ -1238,13 +1238,13 @@ tqdm = ["tqdm"]
 
 [[package]]
 name = "ftmq"
-version = "0.6.11"
+version = "0.6.12"
 description = "followthemoney query dsl and io helpers"
 optional = false
 python-versions = "<4,>=3.11"
 files = [
-    {file = "ftmq-0.6.11-py3-none-any.whl", hash = "sha256:fe25615fe6ed3ba0b6d02a9484c5cb944d48412a6359ca7b2af78359802cfce9"},
-    {file = "ftmq-0.6.11.tar.gz", hash = "sha256:3b5033d98f49de9338703cf05ad9e7d5153cd8b2d9c70ed1fea5cd29607f5232"},
+    {file = "ftmq-0.6.12-py3-none-any.whl", hash = "sha256:9a91c76299f9e6e64d2a2e532a75de4954b8c9c612994c47101e58bf6611697f"},
+    {file = "ftmq-0.6.12.tar.gz", hash = "sha256:258a14dcce2045585f70927e4935079b2d72f1161e0de2982d3f3cf94961d205"},
 ]
 
 [package.dependencies]
@@ -1255,7 +1255,7 @@ certifi = ">=2024.2.2"
 click = ">=8.1.7,<9.0.0"
 click-default-group = ">=1.2.4,<2.0.0"
 cryptography = ">=42.0.7,<44.0.0"
-followthemoney = ">=3.6.3,<4.0.0"
+followthemoney = ">=3.6.4,<4.0.0"
 nomenklatura = ">=3.12.5,<4.0.0"
 orjson = ">=3.10.3,<4.0.0"
 pantomime = ">=0.6.1,<0.7.0"
@@ -4514,4 +4514,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<4"
-content-hash = "b2e14d617702e102270e531b6300ea0db57a7a658590ca53b50ab65c958b1cb6"
+content-hash = "c5ea029365b8f34028c50e60b8fc8411d58e6692febcc1364187b74c25bd9395"
