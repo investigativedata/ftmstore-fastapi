@@ -162,7 +162,7 @@ def search(request: Request, authenticated: bool | None = False) -> EntitiesResp
 
 
 @anycache(key_func=get_cache_key, serialization_mode="pickle")
-def autocomplete(q: str) -> AutocompleteResponse:
+def autocomplete(request, q: str) -> AutocompleteResponse:
     if q is None or len(q) < 4:
         raise HTTPException(400, [f"Invalid search query: `{q}`"])
     store = get_search_store()
