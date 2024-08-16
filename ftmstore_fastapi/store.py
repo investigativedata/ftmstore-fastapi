@@ -100,7 +100,7 @@ def get_view(
     return View(dataset, catalog_uri, resolver_uri)
 
 
-@anycache(key_func=lambda _, entity_id: entity_id)
+@anycache(key_func=lambda _, entity_id: entity_id, serialization_mode="pickle")
 def get_cached_entity(view: View, entity_id: str) -> CE:
     return view.get_entity(entity_id)
 
