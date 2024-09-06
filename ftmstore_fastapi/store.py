@@ -1,7 +1,6 @@
 from functools import cache
 from typing import TYPE_CHECKING, Literal
 
-from anystore import anycache
 from fastapi import HTTPException
 from ftmq.dedupe import get_resolver
 from ftmq.model import Catalog, Dataset
@@ -73,7 +72,7 @@ class View:
 
     def get_entity(self, entity_id: str, params: "RetrieveParams") -> CE | None:
         canonical = self.store.linker.get_canonical(entity_id)
-        proxy = get_cached_entity(self.view, canonical)
+        proxy = self.view.get_entity(canonical)
         if proxy is None:
             raise HTTPException(404, detail=[f"Entity `{entity_id}` not found."])
         if params.dehydrate:
@@ -98,11 +97,6 @@ def get_view(
     resolver_uri: str | None = None,
 ) -> View:
     return View(dataset, catalog_uri, resolver_uri)
-
-
-@anycache(key_func=lambda _, entity_id: entity_id, serialization_mode="pickle")
-def get_cached_entity(view: View, entity_id: str) -> CE:
-    return view.get_entity(entity_id)
 
 
 # cache at boot time

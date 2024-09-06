@@ -67,7 +67,7 @@ def get_aggregation_params(
     return AggregationParams(aggSum=aggSum, aggMin=aggMin, aggMax=aggMax, aggAvg=aggAvg)
 
 
-@anycache(key_func=get_cache_key, serialization_mode="pickle")
+@anycache(key_func=get_cache_key, model=CatalogResponse)
 def dataset_list(request: Request) -> CatalogResponse:
     catalog = get_catalog()
     datasets: list[Dataset] = []
@@ -79,7 +79,7 @@ def dataset_list(request: Request) -> CatalogResponse:
     return CatalogResponse.from_catalog(request, catalog)
 
 
-@anycache(key_func=get_cache_key, serialization_mode="pickle")
+@anycache(key_func=get_cache_key, model=DatasetResponse)
 def dataset_detail(request: Request, name: str) -> DatasetResponse:
     view = get_view(name)
     dataset = get_dataset(name)
@@ -87,7 +87,7 @@ def dataset_detail(request: Request, name: str) -> DatasetResponse:
     return DatasetResponse.from_dataset(request, dataset)
 
 
-@anycache(key_func=get_cache_key, serialization_mode="pickle")
+@anycache(key_func=get_cache_key, model=EntitiesResponse)
 def entity_list(
     request: Request,
     retrieve_params: RetrieveParams,
@@ -132,7 +132,7 @@ def entity_detail(
     return EntityResponse.from_entity(entity, adjacents)
 
 
-@anycache(key_func=get_cache_key, serialization_mode="pickle")
+@anycache(key_func=get_cache_key, model=AggregationResponse)
 def aggregation(request: Request) -> AggregationResponse:
     view = get_view()
     params = ViewQueryParams.from_request(request)
@@ -144,7 +144,7 @@ def aggregation(request: Request) -> AggregationResponse:
     )
 
 
-@anycache(key_func=get_cache_key, serialization_mode="pickle")
+@anycache(key_func=get_cache_key, model=EntitiesResponse)
 def search(request: Request, authenticated: bool | None = False) -> EntitiesResponse:
     params = SearchQueryParams.from_request(request, authenticated)
     q = params.q
