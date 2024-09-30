@@ -3,10 +3,9 @@ import os
 from anystore.io import smart_read
 from banal import as_bool
 from nomenklatura.settings import DB_URL
+from normality import slugify
 
 from ftmstore_fastapi import __version__
-
-VERSION = __version__
 
 CATALOG = os.environ.get("CATALOG")
 RESOLVER = os.environ.get("RESOLVER", os.environ.get("RESOLVER_PATH"))
@@ -20,16 +19,20 @@ DEBUG = as_bool(os.environ.get("DEBUG", 0))
 LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
 BUILD_API_KEY = os.environ.get("BUILD_API_KEY", "secret-key-for-build")
 
+TITLE = os.environ.get("TITLE", "FollowTheMoney Store API")
+
 ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "http://localhost:3000").split(",")
 CACHE = as_bool(os.environ.get("CACHE", 0))
 CACHE_TIMEOUT = int(os.environ.get("CACHE_TIMEOUT", 0))
+CACHE_PREFIX = os.environ.get(
+    "CACHE_PREFIX", f"ftmstore_fastapi/{__version__}/{slugify(TITLE)}"
+)
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
 DEFAULT_LIMIT = 100
 LOG_JSON = as_bool(os.environ.get("LOG_JSON", 0))
 INDEX_PROPERTIES = os.environ.get("INDEX_PROPERTIES", "").split(",")
 
 # Api documentation render
-TITLE = os.environ.get("TITLE", "FollowTheMoney Store API")
 CONTACT = {
     "name": os.environ.get("CONTACT_AUTHOR", "Simon Wörpel"),
     "url": os.environ.get(

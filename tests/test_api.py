@@ -98,6 +98,11 @@ def test_api_dataset_entities():
     data = res.json()
     assert data["total"] == 0
 
+    res = client.get("/entities?dataset=ec_meetings&schema=Event&limit=1&nested=true")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["entities"][0]["properties"]["organizer"][0]["schema"] == "PublicBody"
+
 
 def test_api_dataset_entity_detail():
     res = client.get("/entities/addr-00177d9455d8e1b6a3f5530ea1e7e81ce1c8333f")
@@ -272,3 +277,13 @@ def test_api_entities_id_filter():
     res = client.get("/entities?canonical_id__startswith=eu-authorities-&dataset=gdho")
     data = res.json()
     assert data["total"] == data["items"] == 0
+
+
+def test_api_search_fts():
+    res = client.get("/search?dataset=eu_authorities&q=agency")
+    data = res.json()
+    assert data["items"] == 51
+
+    res = client.get("/autocomplete?q=european defence")
+    data = res.json()
+    assert len(data["candidates"]) == 1
