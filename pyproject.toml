@@ -23,7 +23,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.11,<4"
-fastapi = "^0.115.0"
+fastapi = "^0.115.3"
 furl = "^2.1.3"
 pyicu = "^2.13.1"
 ftmq = "^0.6.14"
