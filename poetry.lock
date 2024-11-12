@@ -3071,12 +3071,12 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pyicu"
-version = "2.13.1"
+version = "2.14"
 description = "Python extension wrapping the ICU C++ API"
 optional = false
 python-versions = "*"
 files = [
-    {file = "PyICU-2.13.1.tar.gz", hash = "sha256:d4919085eaa07da12bade8ee721e7bbf7ade0151ca0f82946a26c8f4b98cdceb"},
+    {file = "PyICU-2.14.tar.gz", hash = "sha256:acc7eb92bd5c554ed577249c6978450a4feda0aa6f01470152b3a7b382a02132"},
 ]
 
 [[package]]
@@ -4291,4 +4291,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<4"
-content-hash = "5418df46951639fd458fdf61cd994b10ab69b492b96ae6a4f5e1895533b35e35"
+content-hash = "2c12267c0fafc2aeb87da5eed0c27032100237a3c19d0be67efb08ad9ec6069b"
