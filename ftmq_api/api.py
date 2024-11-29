@@ -4,10 +4,10 @@ from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
-from ftmstore_fastapi import __version__, settings, views
-from ftmstore_fastapi.logging import get_logger
-from ftmstore_fastapi.query import QueryParams, SearchQueryParams
-from ftmstore_fastapi.serialize import (
+from ftmq_api import __version__, settings, views
+from ftmq_api.logging import get_logger
+from ftmq_api.query import QueryParams, SearchQueryParams
+from ftmq_api.serialize import (
     AggregationResponse,
     AutocompleteResponse,
     CatalogResponse,
@@ -16,8 +16,8 @@ from ftmstore_fastapi.serialize import (
     EntityResponse,
     ErrorResponse,
 )
-from ftmstore_fastapi.settings import FTM_STORE_URI
-from ftmstore_fastapi.store import Datasets
+from ftmq_api.settings import FTM_STORE_URI
+from ftmq_api.store import Datasets
 
 log = get_logger(__name__)
 

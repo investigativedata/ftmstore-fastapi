@@ -10,11 +10,11 @@ from ftmq.store import get_store as _get_store
 from ftmq.types import CE, CEGenerator
 from ftmq.util import get_dehydrated_proxy, get_featured_proxy
 
-from ftmstore_fastapi.logging import get_logger
-from ftmstore_fastapi.settings import CATALOG, FTM_STORE_URI, RESOLVER
+from ftmq_api.logging import get_logger
+from ftmq_api.settings import CATALOG, FTM_STORE_URI, RESOLVER
 
 if TYPE_CHECKING:
-    from ftmstore_fastapi.views import RetrieveParams
+    from ftmq_api.views import RetrieveParams
 
 log = get_logger(__name__)
 

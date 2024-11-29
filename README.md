@@ -115,7 +115,7 @@ parameters from the entities endpoint as well (+ search term via `q`).
 
 ## quickstart
 
-    FTM_STORE_URI=postgres:///ftm gunicorn -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 ftmstore_fastapi.api:app
+    FTM_STORE_URI=postgres:///ftm gunicorn -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 ftmq_api.api:app
 
 This loads the datasets in the ftm store provided by `FTM_STORE_URI` into the in-memory sqlite (1 per worker) and exposes the api at http://localhost:8000
 

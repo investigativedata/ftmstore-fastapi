@@ -1,14 +1,14 @@
 [tool.poetry]
-name = "ftmstore-fastapi"
+name = "ftmq-api"
 version = "2.2.2"
 description = "FastAPI for followthemoney data stores"
 authors = ["Simon Wörpel <simon.woerpel@pm.me>"]
 license = "GNU"
 readme = "README.md"
-packages = [{ include = "ftmstore_fastapi" }]
-homepage = "https://github.com/investigativedata/ftmstore_fastapi"
-repository = "https://github.com/investigativedata/ftmstore_fastapi"
-documentation = "https://github.com/investigativedata/ftmstore_fastapi"
+packages = [{ include = "ftmq_api" }]
+homepage = "https://github.com/investigativedata/ftmq_api"
+repository = "https://github.com/investigativedata/ftmq_api"
+documentation = "https://github.com/investigativedata/ftmq_api"
 classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
@@ -18,7 +18,7 @@ classifiers = [
 ]
 
 [tool.poetry.urls]
-"Bug Tracker" = "https://github.com/investigativedata/ftmstore_fastapi/issues"
+"Bug Tracker" = "https://github.com/investigativedata/ftmq_api/issues"
 
 
 [tool.poetry.dependencies]

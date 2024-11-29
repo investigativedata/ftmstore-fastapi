@@ -4,7 +4,7 @@ export FTM_STORE_URI = sqlite:///followthemoney.store
 export FTMQS_URI = sqlite:///followthemoney.store
 
 api: followthemoney.store
-	CATALOG=./tests/fixtures/catalog.json DEBUG=1 uvicorn ftmstore_fastapi.api:app --reload --port 5000
+	CATALOG=./tests/fixtures/catalog.json DEBUG=1 uvicorn ftmq_api.api:app --reload --port 5000
 
 followthemoney.store:
 	poetry run ftmq --store-dataset ec_meetings -i ./tests/fixtures/ec_meetings.ftm.json -o $(FTM_STORE_URI)
@@ -13,17 +13,17 @@ followthemoney.store:
 	cat ./tests/fixtures/*.ftm.json | poetry run ftmqs transform | poetry run ftmqs --uri $(FTM_STORE_URI) index
 
 test: followthemoney.store
-	poetry run pytest -s --cov=ftmstore_fastapi --cov-report lcov -v
+	poetry run pytest -s --cov=ftmq_api --cov-report lcov -v
 
 typecheck:
 	# pip install types-python-jose
 	# pip install types-passlib
 	# pip install pandas-stubs
-	poetry run mypy ftmstore_fastapi
+	poetry run mypy ftmq_api
 
 lint:
-	poetry run flake8 ftmstore_fastapi --count --select=E9,F63,F7,F82 --show-source --statistics
-	poetry run flake8 ftmstore_fastapi --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+	poetry run flake8 ftmq_api --count --select=E9,F63,F7,F82 --show-source --statistics
+	poetry run flake8 ftmq_api --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
 docker:
 	docker-compose -f $(COMPOSE) up -d

@@ -8,8 +8,8 @@ from ftmq.query import Query as _Query
 from ftmq.types import Schemata
 from pydantic import BaseModel, ConfigDict, Field
 
-from ftmstore_fastapi import settings
-from ftmstore_fastapi.store import Datasets
+from ftmq_api import settings
+from ftmq_api.store import Datasets
 
 
 class RetrieveParams(BaseModel):

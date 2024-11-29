@@ -12,8 +12,8 @@ from ftmq_search.store import get_store as get_search_store
 from furl import furl
 from normality import slugify
 
-from ftmstore_fastapi import settings
-from ftmstore_fastapi.query import (
+from ftmq_api import settings
+from ftmq_api.query import (
     AggregationParams,
     Query,
     RetrieveParams,
@@ -21,7 +21,7 @@ from ftmstore_fastapi.query import (
     SearchQueryParams,
     ViewQueryParams,
 )
-from ftmstore_fastapi.serialize import (
+from ftmq_api.serialize import (
     AggregationResponse,
     AutocompleteResponse,
     CatalogResponse,
@@ -29,7 +29,7 @@ from ftmstore_fastapi.serialize import (
     EntitiesResponse,
     EntityResponse,
 )
-from ftmstore_fastapi.store import get_catalog, get_dataset, get_view
+from ftmq_api.store import get_catalog, get_dataset, get_view
 
 
 def get_cache_key(request: Request, *args, **kwargs) -> str | None:

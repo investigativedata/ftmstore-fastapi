@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from ftmstore_fastapi.api import app
+from ftmq_api.api import app
 
 client = TestClient(app)
 

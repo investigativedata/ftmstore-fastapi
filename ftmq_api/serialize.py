@@ -17,7 +17,7 @@ from ftmq_search.model import AutocompleteResult
 from furl import furl
 from pydantic import BaseModel, ConfigDict, Field
 
-from ftmstore_fastapi.query import ViewQueryParams
+from ftmq_api.query import ViewQueryParams
 
 EntityProperties = dict[str, list[Union[str, "EntityResponse"]]]
 Aggregations = dict[str, dict[str, Any]]
