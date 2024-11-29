@@ -1,6 +1,7 @@
 export LOG_LEVEL ?= info
 export COMPOSE ?= docker-compose.yml
 export FTM_STORE_URI = sqlite:///followthemoney.store
+export FTMQS_URI = sqlite:///followthemoney.store
 
 api: followthemoney.store
 	CATALOG=./tests/fixtures/catalog.json DEBUG=1 uvicorn ftmstore_fastapi.api:app --reload --port 5000
@@ -9,6 +10,7 @@ followthemoney.store:
 	poetry run ftmq --store-dataset ec_meetings -i ./tests/fixtures/ec_meetings.ftm.json -o $(FTM_STORE_URI)
 	poetry run ftmq --store-dataset eu_authorities -i ./tests/fixtures/eu_authorities.ftm.json -o $(FTM_STORE_URI)
 	poetry run ftmq --store-dataset gdho -i ./tests/fixtures/gdho.ftm.json -o $(FTM_STORE_URI)
+	cat ./tests/fixtures/*.ftm.json | poetry run ftmqs transform | poetry run ftmqs --uri $(FTM_STORE_URI) index
 
 test: followthemoney.store
 	poetry run pytest -s --cov=ftmstore_fastapi --cov-report lcov -v

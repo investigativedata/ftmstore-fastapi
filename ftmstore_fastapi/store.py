@@ -1,4 +1,4 @@
-from functools import cache, lru_cache
+from functools import cache
 from typing import TYPE_CHECKING, Literal
 
 from fastapi import HTTPException
@@ -8,10 +8,10 @@ from ftmq.query import Q
 from ftmq.store import Store
 from ftmq.store import get_store as _get_store
 from ftmq.types import CE, CEGenerator
+from ftmq.util import get_dehydrated_proxy, get_featured_proxy
 
 from ftmstore_fastapi.logging import get_logger
 from ftmstore_fastapi.settings import CATALOG, FTM_STORE_URI, RESOLVER
-from ftmstore_fastapi.util import get_dehydrated_proxy, get_featured_proxy
 
 if TYPE_CHECKING:
     from ftmstore_fastapi.views import RetrieveParams
@@ -47,10 +47,10 @@ def get_store(
     if dataset is not None:
         dataset = get_dataset(dataset, catalog)
         store = _get_store(
-            catalog=catalog, dataset=dataset, uri=FTM_STORE_URI, resolver=resolver
+            catalog=catalog, dataset=dataset, uri=FTM_STORE_URI, linker=resolver
         )
     else:
-        store = _get_store(catalog=catalog, uri=FTM_STORE_URI, resolver=resolver)
+        store = _get_store(catalog=catalog, uri=FTM_STORE_URI, linker=resolver)
     return store
 
 
@@ -71,8 +71,8 @@ class View:
         self.get_adjacents = self.query.get_adjacents
 
     def get_entity(self, entity_id: str, params: "RetrieveParams") -> CE | None:
-        canonical = self.store.resolver.get_canonical(entity_id)
-        proxy = get_cached_entity(self.view, canonical)
+        canonical = self.store.linker.get_canonical(entity_id)
+        proxy = self.view.get_entity(canonical)
         if proxy is None:
             raise HTTPException(404, detail=[f"Entity `{entity_id}` not found."])
         if params.dehydrate:
@@ -97,11 +97,6 @@ def get_view(
     resolver_uri: str | None = None,
 ) -> View:
     return View(dataset, catalog_uri, resolver_uri)
-
-
-@lru_cache(10_000)
-def get_cached_entity(view: View, entity_id: str) -> CE:
-    return view.get_entity(entity_id)
 
 
 # cache at boot time

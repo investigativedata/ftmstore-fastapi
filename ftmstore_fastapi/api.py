@@ -4,11 +4,12 @@ from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
-from ftmstore_fastapi import settings, views
+from ftmstore_fastapi import __version__, settings, views
 from ftmstore_fastapi.logging import get_logger
-from ftmstore_fastapi.query import QueryParams
+from ftmstore_fastapi.query import QueryParams, SearchQueryParams
 from ftmstore_fastapi.serialize import (
     AggregationResponse,
+    AutocompleteResponse,
     CatalogResponse,
     DatasetResponse,
     EntitiesResponse,
@@ -26,7 +27,7 @@ app = FastAPI(
     contact=settings.CONTACT,
     description=settings.DESCRIPTION,
     redoc_url="/",
-    version=settings.VERSION,
+    version=__version__,
 )
 app.add_middleware(
     CORSMiddleware,
@@ -142,9 +143,8 @@ async def entities(
 
     ## searching
 
-    Search entities via the configured search backend.
-
-    Use optional `q` parameter for a search term.
+    Use optional `q` parameter for a search term. This does a simple name matching
+    search, use the `/search` endpoint for actual fulltext search via `ftmq-search`
     """
     return views.entity_list(request, retrieve_params, authenticated=authenticated)
 
@@ -204,3 +204,39 @@ async def aggregation(
         ?aggMax=amount&aggMax=date
     """
     return views.aggregation(request)
+
+
+@app.get(
+    "/search",
+    response_model=EntitiesResponse,
+    responses={
+        500: {"model": ErrorResponse, "description": "Server error"},
+    },
+)
+async def search(
+    request: Request,
+    params: SearchQueryParams = Depends(SearchQueryParams),
+    authenticated: bool = Depends(get_authenticated),
+) -> EntitiesResponse:
+    """
+    Search entities via `ftmq-search` and optionally filter by `dataset`,
+    `schema`, `country`
+
+    Returned entities are "dehydrated" and only contain properties defined
+    during indexing.
+    """
+    return views.search(request, authenticated=authenticated)
+
+
+@app.get(
+    "/autocomplete",
+    response_model=AutocompleteResponse,
+    responses={
+        500: {"model": ErrorResponse, "description": "Server error"},
+    },
+)
+async def autocomplete(request: Request, q: str) -> AutocompleteResponse:
+    """
+    Simple autocomplete by names
+    """
+    return views.autocomplete(request, q)
